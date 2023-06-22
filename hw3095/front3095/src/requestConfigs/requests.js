@@ -1,5 +1,6 @@
 const variantsEndpoint = 'http://localhost:3095/variants';
 const statEndpoint = 'http://localhost:3095/stat';
+const voteEndpoint = 'http://localhost:3095/vote';
 
 const fetchConfigVariants={
     URL: variantsEndpoint,
@@ -21,5 +22,17 @@ const fetchConfigStat={
     },
 };
 
+let fetchConfigVote={
+    URL: voteEndpoint,
+    method: 'post',
+    headers: {
+        "Accept": "application/json",
+        'Access-Control-Allow-Origin':'*',
+        'Access-Control-Allow-Methods':'GET,POST',
+        'Content-Type' : 'application/json'
+    },
+};
+
 export const requests = [{resConfig: fetchConfigStat, propName: 'stats'},
-                                                {resConfig: fetchConfigVariants, propName: 'variants'}];
+                                                {resConfig: fetchConfigVariants, propName: 'variants'},
+                                                {resConfig: fetchConfigVote, propName: 'vote'}];
