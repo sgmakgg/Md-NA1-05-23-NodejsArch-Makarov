@@ -3,7 +3,7 @@ const cors = require('cors');
 const webserver = express();
 
 webserver.use(cors());
-webserver.use(express.urlencoded({extended:true}));
+webserver.use(express.json());
 
 const fs = require('fs');
 const path = require('path');
@@ -44,12 +44,14 @@ webserver.get('/stat', (req, res) => {
 
 webserver.post('/vote', (req, res) => {
     logLineSync(logFilePath,`[${port}] `+'"/vote" endpoint called');
-
+    console.log(req.body);
     for (const item of chosenOnes) {
         if(item.code === parseInt(req.body.code)){
             item.votes++;
         }
     }
+
+    console.log(chosenOnes);
 
     res.status(200).end();
 });
