@@ -1,10 +1,13 @@
 ﻿const express = require('express');
+const cors = require('cors');
+const webserver = express();
+
+webserver.use(cors());
+webserver.use(express.urlencoded({extended:true}));
+
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-
-const webserver = express();
-webserver.use(express.urlencoded({extended:true}));
 
 const port = 3095;
 const logFilePath = path.join(__dirname, '_server.log');
