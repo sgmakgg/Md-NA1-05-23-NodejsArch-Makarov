@@ -24,4 +24,4 @@ const VotesSystemVariants = ({variants}) => {
     );
 };
 
-export default VotesSystemVariants;
+export default React.memo(VotesSystemVariants);

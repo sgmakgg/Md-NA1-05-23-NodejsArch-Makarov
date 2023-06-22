@@ -19,4 +19,4 @@ const VotesSystemStat = ({stats}) => {
     );
 };
 
-export default VotesSystemStat;
+export default React.memo(VotesSystemStat);
