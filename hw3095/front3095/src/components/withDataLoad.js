@@ -42,7 +42,7 @@ let withDataLoad = (fetchConfig,propName) => Component => {
         render() {
       
           if ( !this.state.dataReady )
-            return <div>загрузка данных...</div>;
+            return <div style={{minHeight:'11vh'}}>загрузка данных...</div>;
           
           let compProps={
             ...this.props,

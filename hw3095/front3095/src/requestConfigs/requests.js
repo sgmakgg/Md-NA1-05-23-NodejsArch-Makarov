@@ -1,6 +1,6 @@
-const variantsEndpoint = 'http://localhost:3095/variants';
-const statEndpoint = 'http://localhost:3095/stat';
-const voteEndpoint = 'http://localhost:3095/vote';
+const variantsEndpoint = 'http://134.209.89.177:3095/variants';
+const statEndpoint = 'http://134.209.89.177:3095/stat';
+const voteEndpoint = 'http://134.209.89.177:3095/vote';
 
 const fetchConfigVariants={
     URL: variantsEndpoint,

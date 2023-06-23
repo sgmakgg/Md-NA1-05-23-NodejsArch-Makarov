@@ -11,7 +11,7 @@ const VotesSystemStat = ({stats}) => {
 
     return(
         <Fragment>
-            <div className='Statistic'>
+            <div className='Statistic' style={{minHeight: '11vh'}}>
                 <h3>{"Candidates:\xa0"}</h3>
                 {renderCurrentStatistic()}
             </div>
