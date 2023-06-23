@@ -1,5 +1,6 @@
 import React, {Fragment, useState} from 'react';
 import {requests} from "../requestConfigs/requests";
+import {updateEvent, updateStatistic} from "../events/UpdateEvent";
 
 const VotesSystemVariants = ({variants}) => {
 
@@ -13,13 +14,12 @@ const VotesSystemVariants = ({variants}) => {
             if (!response.ok) {
                 throw new Error("fetch error " + response.status);
             }
-
+            updateEvent.emit(updateStatistic, true);
         }
         catch ( error )  {
             this.fetchError(error.message);
         }
-
-    };
+    }
 
     let renderButtons = () => {
         if(voteVariants !== null){
