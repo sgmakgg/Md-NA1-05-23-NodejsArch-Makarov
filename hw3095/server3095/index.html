@@ -14,11 +14,11 @@
         <script>
             async function sendVote(EO){
                 console.log(EO.target.value);
-                await fetch('http://localhost:3095/vote',  {method: 'POST', body: JSON.stringify({code: EO.target.value}), headers: {'Content-Type': 'application/json'}});
+                await fetch('http://134.209.89.177:3095/vote',  {method: 'POST', body: JSON.stringify({code: EO.target.value}), headers: {'Content-Type': 'application/json'}});
                 window.location.reload();
             }
             async function callStat(){
-                const response = await fetch('http://localhost:3095/stat',  {method: 'POST', body: '', headers: {'Content-Type': 'application/json'}});
+                const response = await fetch('http://134.209.89.177:3095/stat',  {method: 'POST', body: '', headers: {'Content-Type': 'application/json'}});
                 let stats = await response.json();
                 let root = document.getElementById('Votes');
                 for (const item of stats) {
@@ -29,7 +29,7 @@
             }
 
             async function callVariants(){
-                const response = await fetch('http://localhost:3095/variants',  {method: 'GET'});
+                const response = await fetch('http://134.209.89.177:3095/variants',  {method: 'GET'});
                 let variants = await response.json();
 
                 let spanEl = document.createElement('span');
