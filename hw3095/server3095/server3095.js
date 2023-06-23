@@ -3,6 +3,7 @@ const cors = require('cors');
 const webserver = express();
 
 webserver.use(cors());
+webserver.use(express.urlencoded({extended:true}));
 webserver.use(express.json());
 
 const fs = require('fs');
@@ -36,10 +37,12 @@ webserver.get('/variants', (req, res) => {
     res.status(200).send(response);
 });
 
-webserver.get('/stat', (req, res) => {
+webserver.post('/stat', (req, res) => {
     logLineSync(logFilePath,`[${port}] `+'"/stat" endpoint called');
 
-    res.status(200).send(chosenOnes);
+    let response = [...chosenOnes].map((item) => {return {votes: item.votes, code: item.code}});
+
+    res.status(200).send(response);
 });
 
 webserver.post('/vote', (req, res) => {
@@ -55,6 +58,15 @@ webserver.post('/vote', (req, res) => {
 
     res.status(200).end();
 });
+
+webserver.get('/page', (req, res) => {
+    logLineSync(logFilePath,`[${port}] `+'"/page" endpoint called');
+
+    res.status(200).sendFile(`${__dirname}/index.html`);
+});
+
+
+
 
 webserver.listen(port,()=>{
     logLineSync(logFilePath,"web server3095 running on port "+port);

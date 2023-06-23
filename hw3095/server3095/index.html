@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Votes System</title>
+</head>
+    <body>
+        <div id="Votes">
+
+        </div>
+        <div id="Buttons">
+
+        </div>
+        <script>
+            async function sendVote(EO){
+                console.log(EO.target.value);
+                await fetch('http://localhost:3095/vote',  {method: 'POST', body: JSON.stringify({code: EO.target.value}), headers: {'Content-Type': 'application/json'}});
+                window.location.reload();
+            }
+            async function callStat(){
+                const response = await fetch('http://localhost:3095/stat',  {method: 'POST', body: '', headers: {'Content-Type': 'application/json'}});
+                let stats = await response.json();
+                let root = document.getElementById('Votes');
+                for (const item of stats) {
+                    let divEl = document.createElement('div');
+                    divEl.innerText = `Code: ${item.code} Votes: ${item.votes}`;
+                    root.appendChild(divEl);
+                }
+            }
+
+            async function callVariants(){
+                const response = await fetch('http://localhost:3095/variants',  {method: 'GET'});
+                let variants = await response.json();
+
+                let spanEl = document.createElement('span');
+                for (const item of variants) {
+                    let button = document.createElement('button');
+                    button.value = item.code;
+                    button.onclick = sendVote;
+                    button.innerText = `${item.FIO}`;
+                    spanEl.appendChild(button);
+                }
+                document.getElementById('Buttons').appendChild(spanEl);
+            }
+
+            callStat();
+            callVariants();
+        </script>
+    </body>
+</html>
