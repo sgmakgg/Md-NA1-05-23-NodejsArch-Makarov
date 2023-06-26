@@ -1,5 +1,6 @@
 ﻿const express = require('express');
 const cors = require('cors');
+let https = require('https');
 const webserver = express();
 
 webserver.use(cors());
@@ -9,6 +10,14 @@ webserver.use(express.json());
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+
+const certdir = 'msnodearch.elmiservis.by';
+
+let privateKey  = fs.readFileSync(`/etc/letsencrypt/live/${certdir}/privkey.pem`, 'utf8');
+let certificate = fs.readFileSync(`/etc/letsencrypt/live/${certdir}/fullchain.pem`, 'utf8');
+let credentials = {key: privateKey, cert: certificate};
+
+
 
 const port = 3095;
 const logFilePath = path.join(__dirname, '_server.log');
@@ -71,3 +80,9 @@ webserver.get('/page', (req, res) => {
 webserver.listen(port,()=>{
     logLineSync(logFilePath,"web server3095 running on port "+port);
 });
+
+if(process.env.NODE_ENV === 'production'){
+    https.createServer(credentials, webserver).listen(443,()=>{
+        logLineSync(logFilePath,"web server3095 running in https mode, listen on port 443 ");
+    });
+}
