@@ -60,17 +60,18 @@ webserver.post('/vote', (req, res) => {
     logLineSync(logFilePath,`[${port}] `+'"/vote" endpoint called');
     console.log(req.body);
 
-    let temp = [...chosenOnes]
-    for (const item of temp) {
+    let statFileData = fs.readFileSync(statFilePath,'utf8');
+    let data = (statFileData.length === 0) ? [...chosenOnes] : JSON.parse(statFileData);
+
+    let updatingData = [...data];
+    for (const item of updatingData) {
         if(item.code === parseInt(req.body.code)){
             item.votes++;
         }
     }
 
-    chosenOnes = temp;
-
     const statFileRecord = fs.openSync(statFilePath, 'w');
-    fs.writeSync(statFileRecord, JSON.stringify(chosenOnes));
+    fs.writeSync(statFileRecord, JSON.stringify(updatingData));
     fs.closeSync(statFileRecord);
 
     console.log(chosenOnes);
