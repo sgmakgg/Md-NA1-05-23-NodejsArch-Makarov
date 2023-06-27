@@ -10,11 +10,15 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-
 const port = 3095;
+
 const logFilePath = path.join(__dirname, '_server.log');
 
-const chosenOnes = [{FIO: 'Ivanov', code: 1, votes:  250},
+const statFilePath = path.join(__dirname, 'statistic.txt');
+let openedStatFile = fs.openSync(statFilePath, 'a+');
+fs.closeSync(openedStatFile);
+
+let chosenOnes = [{FIO: 'Ivanov', code: 1, votes:  250},
                                                 {FIO: 'Petrov',code: 2, votes: 200},
                                                 {FIO: 'Sidorov',code: 3, votes: 100500}];
 
@@ -33,7 +37,10 @@ function logLineSync(logFilePath,logLine) {
 webserver.get('/variants', (req, res) => {
     logLineSync(logFilePath,`[${port}] `+'"/variants" endpoint called');
 
-    let response = [...chosenOnes].map((item) => {return {FIO: item.FIO, code: item.code}});
+    let statFileData = fs.readFileSync(statFilePath,'utf8');
+    let data = (statFileData.length === 0) ? [...chosenOnes] : JSON.parse(statFileData);
+
+    let response = data.map((item) => {return {FIO: item.FIO, code: item.code}});
 
     res.status(200).send(response);
 });
@@ -41,7 +48,10 @@ webserver.get('/variants', (req, res) => {
 webserver.post('/stat', (req, res) => {
     logLineSync(logFilePath,`[${port}] `+'"/stat" endpoint called');
 
-    let response = [...chosenOnes].map((item) => {return {votes: item.votes, code: item.code}});
+    let statFileData = fs.readFileSync(statFilePath,'utf8');
+    let data = (statFileData.length === 0) ? [...chosenOnes] : JSON.parse(statFileData);
+
+    let response = data.map((item) => {return {votes: item.votes, code: item.code}});
 
     res.status(200).send(response);
 });
@@ -49,11 +59,19 @@ webserver.post('/stat', (req, res) => {
 webserver.post('/vote', (req, res) => {
     logLineSync(logFilePath,`[${port}] `+'"/vote" endpoint called');
     console.log(req.body);
-    for (const item of chosenOnes) {
+
+    let temp = [...chosenOnes]
+    for (const item of temp) {
         if(item.code === parseInt(req.body.code)){
             item.votes++;
         }
     }
+
+    chosenOnes = temp;
+
+    const statFileRecord = fs.openSync(statFilePath, 'w');
+    fs.writeSync(statFileRecord, JSON.stringify(chosenOnes));
+    fs.closeSync(statFileRecord);
 
     console.log(chosenOnes);
 
@@ -66,13 +84,6 @@ webserver.get('/page', (req, res) => {
     res.status(200).sendFile(`${__dirname}/index.html`);
 });
 
-
-
-
 webserver.listen(port,()=>{
     logLineSync(logFilePath,"web server3095 running on port "+port);
 });
-
-if(process.env.NODE_ENV === 'production'){
-        logLineSync(logFilePath,"web server3095 running in production mode");
-}

@@ -15,7 +15,6 @@
             async function sendVote(EO){
                 console.log(EO.target.value);
                 await fetch('http://134.209.89.177:3095/vote',  {method: 'POST', body: JSON.stringify({code: EO.target.value}), headers: {'Content-Type': 'application/json'}});
-
                 await callStat();
             }
             async function callStat(){
