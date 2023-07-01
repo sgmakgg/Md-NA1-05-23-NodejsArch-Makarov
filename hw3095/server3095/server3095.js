@@ -51,7 +51,7 @@ webserver.post('/stat', (req, res) => {
     let statFileData = fs.readFileSync(statFilePath,'utf8');
     let data = (statFileData.length === 0) ? [...chosenOnes] : JSON.parse(statFileData);
 
-    let response = data.map((item) => {return {votes: item.votes, code: item.code}});
+    let response = data.map((item) => {return {votes: item.votes, FIO: item.FIO}});
 
     res.status(200).send(response);
 });
