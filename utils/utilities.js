@@ -1,5 +1,4 @@
 // data sanitization
-
 function escapeHTML(text) {
     if ( !text )
         return text;
@@ -13,9 +12,7 @@ function escapeHTML(text) {
 }
 
 
-
 //XML parser
-
 function parseXml(xml, arrayTags) {
     let dom = null;
     if (window.DOMParser) {
@@ -100,4 +97,13 @@ function parseXml(xml, arrayTags) {
     }
 
     return result;
+}
+
+
+//Windows1251 -> UTF8
+function transformWindows1251ToUTF8(response) {
+    const transformedBody = response.body
+        .pipeThrough(new TextDecoderStream("windows-1251"))
+        .pipeThrough(new TextEncoderStream("utf-8"));
+    return new Response(transformedBody);
 }
