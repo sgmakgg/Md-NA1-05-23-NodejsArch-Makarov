@@ -7,18 +7,86 @@
     <body>
         <div id="Votes">
 
-        </div> <br>
+        </div><br>
         <div id="Buttons">
+
+        </div><br>
+        <div id="Download">
 
         </div>
         <script>
+            const acceptHeaderTypes = [{name:'as JSON', acceptHeader:'application/json'}, {name:'as XML', acceptHeader:'application/xml'}, {name:'as HTML', acceptHeader:'application/html'}];
+            const hosts = ['134.209.89.177', 'localhost'];
+
             async function sendVote(EO){
                 console.log(EO.target.value);
-                await fetch('http://134.209.89.177:3095/vote',  {method: 'POST', body: JSON.stringify({code: EO.target.value}), headers: {'Content-Type': 'application/json'}});
+                await fetch('http://localhost:3095/vote',  {method: 'POST', body: JSON.stringify({code: EO.target.value}), headers: {'Content-Type': 'application/json'}});
                 await callStat();
             }
+
+            async function downloadStatistic(EO){
+                if ( EO.target.value==="application/json" ) {
+                    const response = await fetch('http://localhost:3095/downloads',
+                        {method: 'GET',
+                            headers: { 'Accept': `${EO.target.value}`,}});
+                    let data = await response.json();
+
+                    let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+                    let fakebtn = document.createElement('a');
+                    fakebtn.href = dataStr;
+                    fakebtn.download = 'statistic.json';
+                    fakebtn.click();
+                }
+                else if ( EO.target.value==="application/xml" ) {
+                    const response = await fetch('http://localhost:3095/downloads',
+                        {method: 'GET',
+                            headers: { 'Accept': `${EO.target.value}`,}});
+                    let data = await response.text();
+                    console.log(data);
+
+                    let dataStr = "data:text/xml;charset=utf-8," + encodeURIComponent(data);
+                    let fakebtn = document.createElement('a');
+                    fakebtn.href = dataStr;
+                    fakebtn.download = 'statistic.xml';
+                    fakebtn.click();
+                }
+                else if ( EO.target.value==="application/html" ) {
+                    const response = await fetch('http://localhost:3095/downloads',
+                        {method: 'GET',
+                            headers: { 'Accept': `${EO.target.value}`,}});
+                    let data = await response.json();
+
+                    let divEl = document.createElement('div');
+                    for (const item of data){
+                        for (const itemKey in item) {
+                            let spanElem = document.createElement('span');
+                            spanElem.innerText = `${itemKey}: ${item[itemKey]}; `;
+                            divEl.appendChild(spanElem);
+                        }
+                        divEl.innerHTML += '<br>';
+                    }
+                    let dataStr = "data:text/html;charset=utf-8," + encodeURIComponent(divEl.outerHTML);
+                    let fakebtn = document.createElement('a');
+                    fakebtn.href = dataStr;
+                    fakebtn.download = 'statistic.html';
+                    fakebtn.click();
+                }
+            }
+
+            function setDownloadButtons(){
+                let spanEl = document.createElement('span');
+                for (const item of acceptHeaderTypes) {
+                    let button = document.createElement('button');
+                    button.value = item.acceptHeader;
+                    button.onclick = downloadStatistic;
+                    button.innerText = 'Download ' + `${item.name}`;
+                    spanEl.appendChild(button);
+                }
+                document.getElementById('Download').appendChild(spanEl);
+            }
+
             async function callStat(){
-                const response = await fetch('http://134.209.89.177:3095/stat',  {method: 'POST', body: '', headers: {'Content-Type': 'application/json'}});
+                const response = await fetch('http://localhost:3095/stat',  {method: 'POST', body: '', headers: {'Content-Type': 'application/json'}});
                 let stats = await response.json();
 
                 let root = document.getElementById('Votes');
@@ -37,7 +105,7 @@
             }
 
             async function callVariants(){
-                const response = await fetch('http://134.209.89.177:3095/variants',  {method: 'GET'});
+                const response = await fetch('http://localhost:3095/variants',  {method: 'GET'});
                 let variants = await response.json();
 
                 let spanEl = document.createElement('span');
@@ -53,6 +121,7 @@
 
             callStat();
             callVariants();
+            setDownloadButtons();
         </script>
     </body>
 </html>

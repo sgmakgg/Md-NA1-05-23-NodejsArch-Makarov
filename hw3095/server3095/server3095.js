@@ -9,6 +9,7 @@ webserver.use(express.json());
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const X2JS = require("x2js");
 
 const port = 3095;
 
@@ -83,6 +84,30 @@ webserver.get('/page', (req, res) => {
     logLineSync(logFilePath,`[${port}] `+'"/page" endpoint called');
 
     res.status(200).sendFile(`${__dirname}/index.html`);
+});
+
+webserver.get('/downloads', (req, res) => {
+    const clientAccept=req.headers.accept;
+    logLineSync(logFilePath,`[${port}] `+'"/download" endpoint called ' + `${clientAccept}`);
+
+    let statFileData = fs.readFileSync(statFilePath,'utf8');
+    let data = (statFileData.length === 0) ? [...chosenOnes] : JSON.parse(statFileData);
+
+    if ( clientAccept==="application/json" || clientAccept==="application/html") {
+        res.setHeader("Content-Type", "application/json");
+
+        res.send(data);
+    }
+    else if ( clientAccept==="application/xml" ) {
+        res.setHeader("Content-Type", "application/xml");
+        let x2js = new X2JS();
+        let xmlAsStr = x2js.js2xml(data);
+
+        res.send(xmlAsStr);
+    }
+    else {
+        res.status(501).end();
+    }
 });
 
 webserver.listen(port,()=>{
