@@ -35,13 +35,15 @@ function logLineSync(logFilePath,logLine) {
     fs.closeSync(logFileRecord);
 }
 
+function readFileAsJSON(statFilePath){
+    let statFileData = fs.readFileSync(statFilePath,'utf8');
+    return (statFileData.length === 0) ? [...chosenOnes] : JSON.parse(statFileData);
+}
+
 webserver.get('/variants', (req, res) => {
     logLineSync(logFilePath,`[${port}] `+'"/variants" endpoint called');
 
-    let statFileData = fs.readFileSync(statFilePath,'utf8');
-    let data = (statFileData.length === 0) ? [...chosenOnes] : JSON.parse(statFileData);
-
-    let response = data.map((item) => {return {FIO: item.FIO, code: item.code}});
+    let response = readFileAsJSON(statFilePath).map((item) => {return {FIO: item.FIO, code: item.code}});
 
     res.status(200).send(response);
 });
@@ -49,10 +51,7 @@ webserver.get('/variants', (req, res) => {
 webserver.post('/stat', (req, res) => {
     logLineSync(logFilePath,`[${port}] `+'"/stat" endpoint called');
 
-    let statFileData = fs.readFileSync(statFilePath,'utf8');
-    let data = (statFileData.length === 0) ? [...chosenOnes] : JSON.parse(statFileData);
-
-    let response = data.map((item) => {return {votes: item.votes, FIO: item.FIO}});
+    let response = readFileAsJSON(statFilePath).map((item) => {return {votes: item.votes, FIO: item.FIO}});
 
     res.status(200).send(response);
 });
@@ -61,10 +60,7 @@ webserver.post('/vote', (req, res) => {
     logLineSync(logFilePath,`[${port}] `+'"/vote" endpoint called');
     console.log(req.body);
 
-    let statFileData = fs.readFileSync(statFilePath,'utf8');
-    let data = (statFileData.length === 0) ? [...chosenOnes] : JSON.parse(statFileData);
-
-    let updatingData = [...data];
+    let updatingData = [...readFileAsJSON(statFilePath)];
     for (const item of updatingData) {
         if(item.code === parseInt(req.body.code)){
             item.votes++;
@@ -74,8 +70,6 @@ webserver.post('/vote', (req, res) => {
     const statFileRecord = fs.openSync(statFilePath, 'w');
     fs.writeSync(statFileRecord, JSON.stringify(updatingData));
     fs.closeSync(statFileRecord);
-
-    console.log(chosenOnes);
 
     res.status(200).end();
 });
@@ -90,8 +84,7 @@ webserver.get('/downloads', (req, res) => {
     const clientAccept=req.headers.accept;
     logLineSync(logFilePath,`[${port}] `+'"/download" endpoint called ' + `${clientAccept}`);
 
-    let statFileData = fs.readFileSync(statFilePath,'utf8');
-    let data = (statFileData.length === 0) ? [...chosenOnes] : JSON.parse(statFileData);
+    let data = readFileAsJSON(statFilePath);
 
     if ( clientAccept==="application/json" || clientAccept==="application/html") {
         res.setHeader("Content-Type", "application/json");
