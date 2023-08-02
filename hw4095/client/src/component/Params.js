@@ -1,21 +1,45 @@
-import React, {Fragment} from "react";
+import React, {Fragment, useEffect, useState} from "react";
 import Grid from "@mui/material/Unstable_Grid2";
 import Item from "@mui/material/Unstable_Grid2";
 import {Button, TextField} from "@mui/material";
 
-const Params = ({parameters}) =>{
+const Params = ({parameters, cbDeleteParameter, cbUpdateParameter, index}) =>{
+
+    const [getParamKey, setGetParamKey] = useState(parameters.key);
+    const [getParamValue, setGetParamValue] = useState(parameters.value);
+
+    useEffect(() => {
+        cbUpdateParameter({key: getParamKey, value: getParamValue}, index);
+    }, [getParamKey, getParamValue]);
+
+    const deleteParameter = () => {
+        cbDeleteParameter(index);
+    }
+
+    const setKey = (EO) =>{
+        setGetParamKey(EO.target.value);
+    }
+
+    const setValue = (EO) =>{
+        setGetParamValue(EO.target.value);
+    }
+
     return(
         <Fragment>
             <Grid display="flex"
                   justifyContent="left"
                   alignItems="left"
                   xs={8}>
-                    <TextField id="outlined-search" label="Parameter key"
+                    <TextField value={getParamKey}
+                               onChange={setKey}
+                               id="outlined-search" label="Parameter key"
                                sx={{ width: '100%'}}
                                size='small'
                     />
 
-                    <TextField id="outlined-search" label="Parameter value"
+                    <TextField value={getParamValue}
+                               onChange={setValue}
+                               id="outlined-search" label="Parameter value"
                                sx={{ width: '100%'}}
                                size='small'
                     />
@@ -24,8 +48,8 @@ const Params = ({parameters}) =>{
                   justifyContent="left"
                   alignItems="left"
                   xs={2}>
-                <Item sx={{ width: '100%', height:'10vh'}}>
-                    <Button variant="outlined" size="medium">
+                <Item sx={{ width: '100%', height:'30%'}}>
+                    <Button variant="outlined" size="medium" onClick={deleteParameter}>
                         DELETE
                     </Button>
                 </Item>

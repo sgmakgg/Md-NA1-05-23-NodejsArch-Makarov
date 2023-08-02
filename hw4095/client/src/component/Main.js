@@ -7,8 +7,8 @@ import './Main.css';
 import Request from "./Request";
 import RequestItem from "./RequestItem";
 
-let defReq = [{name: 'default', url: 'https://www.host.com', method: 'GET', parameters: [{key: 'key', value: 'value'}], contentTypes:{}, body:''},
-    {name: 'default2', url: 'https://www.own.co', method: 'POST', parameters: [{}], contentTypes:{}, body:''}];
+let defReq = [{name: 'default', url: 'https://www.host.com', method: 'GET', parameters: [], contentTypes:[], body:''},
+    {name: 'default2', url: 'https://www.own.co', method: 'POST', parameters: [], contentTypes:[], body:''}];
 
 const Main = () => {
 

@@ -1,44 +1,55 @@
-import React, {Fragment} from "react";
+import React, {Fragment, useEffect, useState} from "react";
 import Grid from "@mui/material/Unstable_Grid2";
 import Item from "@mui/material/Unstable_Grid2";
 import {Autocomplete, Button, TextField} from "@mui/material";
 
-const Headers = () =>{
+const Headers = ({contentType, index, cbDeleteContentType, cbUpdateContentType}) =>{
+
+    const [contentTypeKey, setContentTypeKey] = useState(contentType.key);
+    const [contentTypeValue, setContentTypeValue] = useState(contentType.value);
+
+    useEffect(() => {
+        cbUpdateContentType({key: contentTypeKey, value: contentTypeValue}, index);
+    }, [contentTypeKey, contentTypeValue]);
+
+    const deleteContentType = () => {
+        cbDeleteContentType(index);
+    }
+
     return(
         <Fragment>
             <Grid display="flex"
                   justifyContent="left"
                   alignItems="left"
-                  xs={4}>
-                <Item sx={{ width: '100%', height:'10vh', padding: 5}}>
-                    <Autocomplete
-                        disablePortal
+                  xs={8}>
+
+                    <Autocomplete sx={{ width: '100%'}}
+                        value={contentTypeKey}
+                        onChange={(event, newValue) => {
+                            setContentTypeKey(newValue);
+                        }}
                         id="combo-box-demo"
                         options={['Content-type', 'Origin', 'Accept']}
 
                         size='small'
                         renderInput={(params) => <TextField {...params} label="Header" />}
                     />
-                </Item>
-            </Grid>
-            <Grid display="flex"
-                  justifyContent="left"
-                  alignItems="left"
-                  xs={4}>
-                <Item sx={{ width: '100%', height:'10vh', padding: 5}}>
-                    <TextField id="outlined-search" label="Header value"
+                    <TextField value={contentTypeValue}
+                               onChange={(EO) => {
+                                   setContentTypeValue(EO.target.value);
+                               }}
+                               id="outlined-search"
+                               label="Header value"
                                sx={{ width: '100%'}}
                                size='small'
                     />
-                </Item>
-
             </Grid>
             <Grid display="flex"
                   justifyContent="left"
                   alignItems="left"
-                  xs={4}>
-                <Item sx={{ width: '100%', height:'10vh', padding: 5}}>
-                    <Button variant="outlined" size="medium">
+                  xs={2}>
+                <Item sx={{ width: '100%', height:'30%'}}>
+                    <Button variant="outlined" size="medium" onClick={deleteContentType}>
                         DELETE
                     </Button>
                 </Item>
