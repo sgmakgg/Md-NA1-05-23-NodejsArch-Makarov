@@ -6,7 +6,7 @@ import Params from "./Params";
 import Headers from "./Headers";
 
 const reqMethodOpt = ['GET', 'POST'];
-const localHost = 'http://localhost:4095'
+const localHost = 'http://localhost:4095/postman'
 const fetchConfig={
     URL: localHost,
     method: 'post',
