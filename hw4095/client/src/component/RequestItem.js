@@ -5,11 +5,19 @@ import Grid from "@mui/material/Unstable_Grid2";
 import Params from "./Params";
 import Headers from "./Headers";
 
-// let defReq = [{name: 'default', url: 'https://www.host.com', method: 'GET', parameters: [{key: 'key', value: 'value'}], contentTypes:[{key:'Accept', value:'text/html'}], body:''},
-//     {name: 'default2', url: 'https://www.own.co', method: 'POST', parameters: [], contentTypes:[], body:''}];
-
 const reqMethodOpt = ['GET', 'POST'];
-const RequestItem = ({reqItem}) => {
+const localHost = 'http://localhost:4095'
+const fetchConfig={
+    URL: localHost,
+    method: 'post',
+    headers: {
+        "Accept": "application/json",
+        'Access-Control-Allow-Origin':'*',
+        'Access-Control-Allow-Methods':'GET,POST',
+        'Content-Type' : 'application/json'
+    },
+};
+const RequestItem = ({reqItem, cbSaveRequest, cbDeleteReq}) => {
 
     const [reqName, setReqName] = useState(reqItem.name);
     const [reqMethod, setReqMethod] = useState(reqItem.method || reqMethodOpt[0]);
@@ -17,6 +25,7 @@ const RequestItem = ({reqItem}) => {
     const [reqGetParams, setReqGetParams] = useState(reqItem.parameters);
     const [reqBody, setReqBody] = useState(reqItem.body);
     const [reqContentTypes, setReqContentTypes] = useState(reqItem.contentTypes);
+    const [responseData, setResponseData] = useState(null);
 
     useEffect(() => {
         setReqName(reqItem.name);
@@ -60,6 +69,40 @@ const RequestItem = ({reqItem}) => {
         let ct = [...reqContentTypes];
         ct[index] = ContentTypesObj;
         setReqContentTypes(ct);
+    }
+
+    const reqObjFactory = () => {
+        return {name: reqName,
+            url: reqUrl,
+            method: reqMethod,
+            parameters: reqGetParams,
+            contentTypes:reqContentTypes,
+            body:reqBody};
+    }
+
+    const saveRequest = () =>{
+        let reqObj = reqObjFactory();
+        cbSaveRequest(reqObj);
+    }
+
+    const deleteReq = () => {
+        let reqObj = reqObjFactory();
+        cbDeleteReq(reqObj);
+    }
+
+    const sendReq = async () => {
+        fetchConfig.body = JSON.stringify(reqObjFactory());
+            try {
+                let response=await fetch(fetchConfig.URL, fetchConfig);
+                if (!response.ok) {
+                    throw new Error("fetch error " + response.status);
+                }
+                let data=await response.json();
+                setResponseData(data);
+            }
+            catch ( error )  {
+                console.log(error.message);
+            }
     }
 
     return(
@@ -154,9 +197,9 @@ const RequestItem = ({reqItem}) => {
                   xs={12}>
                 <Item sx={{ width: '100%', height:'30%'}}>
                     <ButtonGroup variant="text" aria-label="text button group">
-                        <Button>Save request</Button>
-                        <Button>Send request</Button>
-                        <Button>Clear form</Button>
+                        <Button onClick={saveRequest}>Save request</Button>
+                        <Button onClick={sendReq}>Send request</Button>
+                        <Button onClick={deleteReq}>Delete request</Button>
                     </ButtonGroup>
                 </Item>
             </Grid>
