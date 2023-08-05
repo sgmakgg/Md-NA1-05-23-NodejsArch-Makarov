@@ -159,8 +159,13 @@ const RequestItem = ({reqItem, cbSaveRequest, cbDeleteReq}) => {
                                           alignItems="left"
                                           xs={3}>
                 <Button sx={{ width: '60%', height:'30%'}} variant="outlined" size="medium" onClick={addParameter}>
-                    Add GET parameter
+                    Add parameter
                 </Button>
+            </Grid>}
+            {reqMethod === 'GET' &&<Grid display="flex"
+                  justifyContent="left"
+                  alignItems="left"
+                  xs={9}>
             </Grid>}
 
             {reqMethod === 'POST' && <Grid display="flex"
@@ -177,19 +182,24 @@ const RequestItem = ({reqItem, cbSaveRequest, cbDeleteReq}) => {
                         size='small'
                     />
             </Grid>}
-            {(reqMethod === 'POST' && reqContentTypes.length !== 0) && reqContentTypes.map((item, index)=>(<Headers contentType = {item}
-                                                                                                                    cbDeleteContentType = {cbDeleteContentType}
-                                                                                                                    cbUpdateContentType = {cbUpdateContentType}
-                                                                                                                    key={index}
-                                                                                                                    index={index}></Headers>))}
-            {reqMethod === 'POST' && <Grid display="flex"
-                                          justifyContent="left"
-                                          alignItems="left"
-                                          xs={3}>
+            {reqContentTypes.length !== 0 && reqContentTypes.map((item, index)=>(<Headers contentType = {item}
+                                                                                            cbDeleteContentType = {cbDeleteContentType}
+                                                                                            cbUpdateContentType = {cbUpdateContentType}
+                                                                                            key={index}
+                                                                                            index={index}></Headers>))}
+            <Grid display="flex"
+                  justifyContent="left"
+                  alignItems="left"
+                  xs={3}>
                 <Button sx={{ width: '60%', height:'30%'}} variant="outlined" size="medium" onClick={addContentType}>
-                    Add Content type
+                    Add header
                 </Button>
-            </Grid>}
+            </Grid>
+            <Grid display="flex"
+                  justifyContent="left"
+                  alignItems="left"
+                  xs={9}>
+            </Grid>
 
             <Grid display="flex"
                   justifyContent="left"
