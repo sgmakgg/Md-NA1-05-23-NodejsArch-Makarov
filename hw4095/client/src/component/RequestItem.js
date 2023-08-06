@@ -7,9 +7,15 @@ import Headers from "./Headers";
 import Response from "./Response";
 
 const reqMethodOpt = ['GET', 'POST'];
-const localHost = 'http://localhost:4095/postman'
+
+// There is also a built-in environment variable called NODE_ENV. You can read it from process.env.NODE_ENV.
+//     When you run npm start, it is always equal to 'development',
+//     when you run npm test it is always equal to 'test', and when you run npm run build to make a production bundle,
+//     it is always equal to 'production'.
+//     You cannot override NODE_ENV manually. This prevents developers from accidentally deploying a slow development build to production.
+const host = process.env.NODE_ENV === 'production' ? 'http://msnodearch.elmiservis.by:4095/postman' : 'http://localhost:4095/postman';
 const fetchConfig={
-    URL: localHost,
+    URL: host,
     method: 'post',
     headers: {
         "Accept": "application/json",
