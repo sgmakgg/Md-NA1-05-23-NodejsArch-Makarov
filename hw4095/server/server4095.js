@@ -30,17 +30,38 @@ function logLineSync(logFilePath,logLine) {
 
 
 webserver.post('/postman', (req, res) => {
-    logLineSync(logFilePath,`[${port}] `+'"/postman" endpoint called ' + `get req.body:  ${JSON.stringify(req.body)}`);
+    logLineSync(logFilePath,`[${port}] `+'"/postman" endpoint called\xa0' + `get req.body:  ${JSON.stringify(req.body)}`);
 
-        if(req.body.method === 'GET' && req.body.parameters.length === 0){
+        if(req.body.method === 'GET'){
+            logLineSync(logFilePath,`[${port}] `+'"/postman" endpoint called' + `received GET request `);
+            let urlParamPart =  null;
+
+            if(req.body.parameters.length !== 0){
+                urlParamPart =  new URLSearchParams();
+                req.body.parameters.forEach(item => (urlParamPart.append(item.key, item.value)));
+                logLineSync(logFilePath,`[${port}] `+'"/postman" endpoint ' + `created urlParamPart:  ${urlParamPart}`);
+            }
+
+            let fetchConfig={
+                URL: (urlParamPart ===  null) ? req.body.url : (req.body.url + '?' + urlParamPart),
+                method: req.body.method
+            };
+
+            fetchConfig.headers = HeadersOrParametersParser(req.body.contentTypes);
+            logLineSync(logFilePath,`[${port}] `+'"/postman" endpoint ' + `created fetchConfig:  ${JSON.stringify(fetchConfig)}`);
+
+            SendResponseToClient(fetchConfig, res);
+        }
+
+        if(req.body.method === 'POST'){
+            logLineSync(logFilePath,`[${port}] `+'"/postman" endpoint called' + `received POST request `);
             let fetchConfig={
                 URL: req.body.url,
                 method: req.body.method
             };
-
-            fetchConfig.headers = ClientHeadersToReqHeaderParser(req.body.contentTypes);
+            fetchConfig.headers = HeadersOrParametersParser(req.body.contentTypes);
+            fetchConfig.body = req.body.body;
             logLineSync(logFilePath,`[${port}] `+'"/postman" endpoint ' + `created fetchConfig:  ${JSON.stringify(fetchConfig)}`);
-
             SendResponseToClient(fetchConfig, res);
         }
 });
@@ -55,28 +76,24 @@ async function SendResponseToClient  (fetchConfig, res){
     try {
         let response=await fetch(fetchConfig.URL, fetchConfig);
 
-        if (!response.ok) {
-            throw new Error("fetch error " + response.status);
-        }
-
         clientResponseObj.status = response.status;
-        clientResponseObj.contentType = response.headers.get('Content-Type');
-        clientResponseObj.headers = {};
+        clientResponseObj.headers = [];
         for (let [key, value] of response.headers) {
-            clientResponseObj.headers[key] = value;
+            clientResponseObj.headers.push({key: key, value: value});
         }
 
-        let data=await response.json();
-        clientResponseObj.body =  JSON.stringify(data);
+        clientResponseObj.body =  await response.json();
 
-        res.send(JSON.stringify(clientResponseObj)).status(200);
+        logLineSync(logFilePath,`[${port}] `+'"/postman" endpoint ' + `response sent to client:  ${JSON.stringify(clientResponseObj)}`);
+        res.setHeader('Content-Type', 'application/json')
+        res.send(clientResponseObj).status(200);
     }
     catch ( error )  {
         console.log(error.message);
     }
 }
 
-function ClientHeadersToReqHeaderParser(reqConTypesObj){
+function HeadersOrParametersParser(reqConTypesObj){
     let tempObj = {};
     reqConTypesObj.forEach(item=> tempObj[item.key] = item.value);
     return tempObj;
