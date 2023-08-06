@@ -4,6 +4,7 @@ import Item from "@mui/material/Unstable_Grid2";
 import Grid from "@mui/material/Unstable_Grid2";
 import Params from "./Params";
 import Headers from "./Headers";
+import Response from "./Response";
 
 const reqMethodOpt = ['GET', 'POST'];
 const localHost = 'http://localhost:4095/postman'
@@ -33,6 +34,7 @@ const RequestItem = ({reqItem, cbSaveRequest, cbDeleteReq}) => {
         setReqUrl(reqItem.url);
         setReqGetParams(reqItem.parameters);
         setReqContentTypes(reqItem.contentTypes);
+        setResponseData(null);
     }, [reqItem]);
 
     const addParameter = () => {
@@ -104,6 +106,8 @@ const RequestItem = ({reqItem, cbSaveRequest, cbDeleteReq}) => {
                 console.log(error.message);
             }
     }
+
+
 
     return(
         <Fragment>
@@ -221,6 +225,7 @@ const RequestItem = ({reqItem, cbSaveRequest, cbDeleteReq}) => {
                     <hr/>
                 </Item>
             </Grid>
+            {responseData !== null && <Response responseData = {responseData}></Response>}
         </Fragment>
     );
 }

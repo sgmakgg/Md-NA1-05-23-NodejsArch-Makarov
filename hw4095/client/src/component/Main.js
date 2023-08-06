@@ -80,9 +80,6 @@ const Main = () => {
                                                 cbSaveRequest={cbSaveRequest}
                                                 cbDeleteReq={cbDeleteReq}>
                                     </RequestItem>}
-                <Grid className='Response' xs={12}>
-                    <h1>Response</h1>
-                </Grid>
             </Grid>
         </Grid>
     );
