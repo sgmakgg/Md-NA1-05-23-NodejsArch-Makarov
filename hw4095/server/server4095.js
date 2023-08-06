@@ -28,6 +28,18 @@ function logLineSync(logFilePath,logLine) {
     fs.closeSync(logFileRecord);
 }
 
+webserver.use(function (req, res, next) {
+    logLineSync(logFilePath,`[${port}] `+"static server called, originalUrl="+req.originalUrl);
+    next();
+});
+
+webserver.use(
+    express.static(path.resolve(__dirname,"../client/build"))
+);
+
+webserver.get('/', function (req, res) {
+    res.sendFile(path.join(__dirname, "../client/build", 'index.html'));
+});
 
 webserver.post('/postman', (req, res) => {
     logLineSync(logFilePath,`[${port}] `+'"/postman" endpoint called\xa0' + `get req.body:  ${JSON.stringify(req.body)}`);
