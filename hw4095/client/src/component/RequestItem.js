@@ -41,6 +41,7 @@ const RequestItem = ({reqItem, cbSaveRequest, cbDeleteReq}) => {
         setReqGetParams(reqItem.parameters);
         setReqContentTypes(reqItem.contentTypes);
         setResponseData(null);
+        setReqBody(reqItem.body);
     }, [reqItem]);
 
     const addParameter = () => {
