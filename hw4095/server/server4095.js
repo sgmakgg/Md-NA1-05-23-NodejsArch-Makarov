@@ -62,7 +62,7 @@ webserver.post('/postman', (req, res) => {
             fetchConfig.headers = HeadersOrParametersParser(req.body.contentTypes);
             logLineSync(logFilePath,`[${port}] `+'"/postman" endpoint ' + `created fetchConfig:  ${JSON.stringify(fetchConfig)}`);
 
-            SendResponseToClient(fetchConfig, res);
+            SendRequestToClient(fetchConfig, res);
         }
 
         if(req.body.method === 'POST'){
@@ -74,7 +74,7 @@ webserver.post('/postman', (req, res) => {
             fetchConfig.headers = HeadersOrParametersParser(req.body.contentTypes);
             fetchConfig.body = req.body.body;
             logLineSync(logFilePath,`[${port}] `+'"/postman" endpoint ' + `created fetchConfig:  ${JSON.stringify(fetchConfig)}`);
-            SendResponseToClient(fetchConfig, res);
+            SendRequestToClient(fetchConfig, res);
         }
 });
 
@@ -83,7 +83,7 @@ webserver.listen(port,()=>{
     logLineSync(logFilePath,"web server3095 running on port "+port);
 });
 
-async function SendResponseToClient  (fetchConfig, res){
+async function SendRequestToClient  (fetchConfig, res){
     let clientResponseObj = {};
     try {
         let response=await fetch(fetchConfig.URL, fetchConfig);
