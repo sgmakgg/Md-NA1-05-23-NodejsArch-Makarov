@@ -7,16 +7,15 @@ const webserver = express();
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const logFilePath = path.join(__dirname, '_server.log');
 
 import {bodyValidation} from "./utils/validation.js";
 import logLineAsync from "./utils/logger.js";
 import RequestToAPI from "./utils/apireq.js";
 
 const port = 4095;
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const logFilePath = path.join(__dirname, '_server.log');
 
 webserver.use(cors());
 webserver.use(express.urlencoded({extended:true}));
