@@ -22,7 +22,7 @@ rl.on('line', async (fullPath) => {
     if ( !fullPath )
         rl.close();
     else {
-        arcDirPath = path.join(fullPath, ARCDIR)
+        arcDirPath = path.join(fullPath, ARCDIR);
         await compressFiles(fullPath, arcDirPath);
         }
         rl.prompt();
