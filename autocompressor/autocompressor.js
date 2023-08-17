@@ -12,7 +12,7 @@ let arcDirPath ='';
 const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
-    prompt: "Enter full path >"
+    prompt: "Enter full path > "
 });
 
 rl.prompt();
