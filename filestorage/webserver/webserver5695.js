@@ -59,22 +59,20 @@ webserver.post('/upload', busboy(), async (req, res)=>{
 
         file.pipe(writeStream);
 
-        file.on('data', async function(data) {
+        file.on('data', function(data) {
             totalDownloaded += data.length;
             logLineAsync(logFilePath,'loaded '+totalDownloaded+' bytes of '+totalRequestLength);
             if(socket !== null)
                 socket.send('loaded '+totalDownloaded+' bytes of '+totalRequestLength)
-        });
-
-
-        file.on('end', () => {
+        }).on('close', () => {
             logLineAsync(logFilePath,'file  received');
-            // socket.terminate();
             socket.send('file received');
+            socket.terminate();
+            socket = null;
             logLineAsync(logFilePath,`[${portWS}] `+"websocket connection closed");
         });
-    });
 
+    });
 
     res.status(200).end();
 });
