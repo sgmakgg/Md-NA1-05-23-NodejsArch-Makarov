@@ -10,17 +10,14 @@ const webserver = express();
 webserver.use(express.urlencoded({extended:true}));
 
 const WebSocket = require('ws');
-
 const portWS = 56951;
-
-
-
-let clients=[]; // здесь будут объекты вида { connection:, lastkeepalive:NNN }
+const server = new WebSocket.Server({ port: portWS });
+server.binaryType = 'blob';
+let clients=[];
 
 const port = 5695;
 const logFilePath = path.join(__dirname, '_server.log');
 
-const server = new WebSocket.Server({ port: portWS }); // создаём сокет-сервер на порту 5632
 logLineAsync(logFilePath,"socket server running on port "+portWS);
 
 webserver.use(function (req, res, next) {
@@ -33,23 +30,36 @@ webserver.use(
     express.static(path.resolve(__dirname,"static"))
 );
 
-let socket = null;
-webserver.post('/upload', busboy(), async (req, res)=>{
+webserver.post('/upload/:id', busboy(), async (req, res)=>{
     logLineAsync(logFilePath,`[${port}] `+"/upload EP called");
 
-    const totalRequestLength = +req.headers["content-length"]; // общая длина запроса
-    let totalDownloaded = 0; // сколько байт уже получено
+    const totalRequestLength = +req.headers["content-length"];
+    let totalDownloaded = 0;
 
-    let reqFields = {}; // здесь будет собираться информация обо всех полях запроса, кроме файлов
-    let reqFiles = {}; // здесь буте собираться информация обо всех файлах
+    let socketId = parseInt(decodeURIComponent(req.params['id']));
+
+    let socketIndex;
+    let socket = clients.find( (item, index) => {
+        if(item.id === socketId){
+            socketIndex = index;
+            return true;
+        }
+    });
+
+    if(!socket){
+        res.status(400).end();
+    }
+
+    let reqFields = {};
+    let reqFiles = {};
 
     req.pipe(req.busboy);
 
-    req.busboy.on('field', function(fieldname, val) { // это событие возникает, когда в запросе обнаруживается "простое" поле, не файл
-        reqFields[fieldname] = val;
+    req.busboy.on('field', function(fieldname, val) {
+            reqFields[fieldname] = val;
     });
 
-    req.busboy.on('file', (fieldname, file, info, mimetype) => {  // это событие возникает, когда в запросе обнаруживается файл
+    req.busboy.on('file', (fieldname, file, info) => {
 
         reqFiles[fieldname]={originalFN:info.filename};
 
@@ -63,15 +73,17 @@ webserver.post('/upload', busboy(), async (req, res)=>{
             totalDownloaded += data.length;
             logLineAsync(logFilePath,'loaded '+totalDownloaded+' bytes of '+totalRequestLength);
             if(socket !== null)
-                socket.send('loaded '+totalDownloaded+' bytes of '+totalRequestLength)
+                socket.connection.send('loaded '+totalDownloaded+' bytes of '+totalRequestLength)
         }).on('close', () => {
             logLineAsync(logFilePath,'file  received');
-            socket.send('file received');
-            socket.terminate();
+            socket.connection.send('file received');
+
+            clients.splice(socketIndex, 1);
+            socket.connection.terminate();
             socket = null;
+
             logLineAsync(logFilePath,`[${portWS}] `+"websocket connection closed");
         });
-
     });
 
     res.status(200).end();
@@ -83,21 +95,13 @@ webserver.listen(port,()=>{
 
 
 server.on('connection', connection => {
-
-    socket = connection;
     logLineAsync(logFilePath,`[${portWS}] `+"new connection established");
 
     connection.send('hello from server to client!');
-
-    connection.on('message', message => {
-        if ( message==="KEEP_ME_ALIVE" ) {
-            clients.forEach( client => {
-                if ( client.connection===connection )
-                    client.lastkeepalive=Date.now();
-            } );
-        }
-        else
-            console.log('сервером получено сообщение от клиента: '+message)
+    connection.on('message', async message => {
+            const reader = await new Response(message).text();
+            let data = JSON.parse(reader);
+            clients.push({id: data.wsReqId, connection: connection});
     });
 });
 

@@ -4,33 +4,57 @@
     <meta charset="UTF-8">
     <title>Upload</title>
 </head>
-    <body>
+<body>
+    <div id="upload">
+        <form name="uploadForm">
+            <input type="file" id="file" name="file"/><br><br>
+            <label for="comment">Comment:</label><br>
+            <input type="text" id="comment" name="comment"/><br><br>
+            <input type="button" value="Upload" onclick="uploadFile()">
+        </form>
+    </div>
+    <div id="filmsList">
+
+    </div>
     <script>
-        const url = 'ws://localhost:56951';
-        let connection = new WebSocket(url);
+        function uploadFile() {
+            const url = 'ws://localhost:56951';
+            let connection = new WebSocket(url);
 
-        connection.onopen = (event) => {
-            connection.send('hello from client to server!');
-        };
+            connection.onopen = () => {
+                let wsReqId = Math.floor(Math.random() * 100000);
+                let blob = new Blob([JSON.stringify({wsReqId: wsReqId})], {type: "application/json"});
+                connection.send(blob);
+                uploadPostReq(wsReqId);
+            };
 
-        connection.onmessage = function (event) {
-            console.log(event.data); //
+            connection.onmessage = function (event) {
+                console.log(event.data); //
+            }
+
+            connection.onerror = error => {
+                console.log('WebSocket error:',error);
+            };
+
+            connection.onclose = () => {
+                console.log("соединение с сервером закрыто");
+                connection=null;
+            };
         }
 
-        connection.onerror = error => {
-            console.log('WebSocket error:',error);
-        };
+        function uploadPostReq(wsReqId) {
+            let formData = document.forms['uploadForm'];
+            let reqData = new FormData(formData);
+            let wsId = encodeURIComponent(wsReqId);
+            let url = 'http://localhost:5695/upload/' + `${wsId}`;
 
-        connection.onclose = () => {
-            console.log("соединение с сервером закрыто");
-            connection=null;
-        };
+            const fetchOptions={
+                method: "post",
+                body: reqData,
+            };
+
+            fetch(url, fetchOptions)
+        }
     </script>
-    <form id="uploadForm" enctype="multipart/form-data" action="http://localhost:5695/upload" method="post">
-        <input type="file" id="upload" name="upload"/><br><br>
-        <label for="comment">Comment:</label><br>
-        <input type="text" id="comment" name="comment"/><br><br>
-        <input type="submit" value="Upload">
-    </form>
-    </body>
+</body>
 </html>
