@@ -62,12 +62,11 @@ webserver.post('/upload/:id', busboy(), async (req, res)=>{
     });
 
     req.busboy.on('file', (fieldname, file, info) => {
+        fileObj.fName = Buffer.from(info.filename, 'latin1').toString('utf8');
 
-        fileObj.fName = info.filename;
+        logLineAsync(logFilePath,`Uploading of '${fileObj.fName}' started`);
 
-        logLineAsync(logFilePath,`Uploading of '${info.filename}' started`);
-
-        const writeStream = fs.createWriteStream(path.join(__dirname,"upload", `${info.filename}`));
+        const writeStream = fs.createWriteStream(path.join(__dirname,"upload", `${fileObj.fName}`));
 
         file.pipe(writeStream);
 
@@ -134,7 +133,6 @@ webserver.get('/file/:name', async (req, res)=>{
     let fileName = decodeURIComponent(req.params['name']);
 
     fileName = escapeHTML(fileName);
-    console.log(fileName);
 
     let filePath = path.join(__dirname, 'upload', fileName);
 

@@ -7,7 +7,7 @@
 <body>
     <div style="display: flex">
         <div id="upload" style="width: 30%">
-            <form name="uploadForm">
+            <form name="uploadForm" enctype='multipart/form-data'>
                 <input type="file" id="file" name="file"/><br><br>
                 <label for="comment">Comment:</label><br>
                 <input type="text" id="comment" name="comment"/><br><br>
@@ -23,6 +23,7 @@
     </div>
     <script>
         let host = 'msnodearch.elmiservis.by';
+        // let host = 'localhost';
         function uploadFile() {
             const url = `ws://${host}:56951`;
             let connection = new WebSocket(url);
@@ -56,7 +57,7 @@
 
             const fetchOptions={
                 method: "post",
-                body: reqData,
+                body: reqData
             };
 
             fetch(url, fetchOptions)
