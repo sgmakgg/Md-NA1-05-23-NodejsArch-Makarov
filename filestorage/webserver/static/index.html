@@ -5,20 +5,26 @@
     <title>Upload</title>
 </head>
 <body>
-    <div id="upload">
-        <form name="uploadForm">
-            <input type="file" id="file" name="file"/><br><br>
-            <label for="comment">Comment:</label><br>
-            <input type="text" id="comment" name="comment"/><br><br>
-            <input type="button" value="Upload" onclick="uploadFile()">
-        </form>
-    </div>
-    <div id="filmsList">
+    <div style="display: flex">
+        <div id="upload" style="width: 30%">
+            <form name="uploadForm">
+                <input type="file" id="file" name="file"/><br><br>
+                <label for="comment">Comment:</label><br>
+                <input type="text" id="comment" name="comment"/><br><br>
+                <input type="button" value="Upload" onclick="uploadFile()">
+            </form>
+        </div>
+        <div>
+            <div id="filmsList">
 
+            </div>
+            <input type="button" value="Refresh" onclick="downloadFilesList()">
+        </div>
     </div>
     <script>
+        let host = 'localhost';
         function uploadFile() {
-            const url = 'ws://localhost:56951';
+            const url = `ws://${host}:56951`;
             let connection = new WebSocket(url);
 
             connection.onopen = () => {
@@ -46,7 +52,7 @@
             let formData = document.forms['uploadForm'];
             let reqData = new FormData(formData);
             let wsId = encodeURIComponent(wsReqId);
-            let url = 'http://localhost:5695/upload/' + `${wsId}`;
+            let url = `http://${host}:5695/upload/` + `${wsId}`;
 
             const fetchOptions={
                 method: "post",
@@ -54,6 +60,46 @@
             };
 
             fetch(url, fetchOptions)
+        }
+
+        async function downloadFilesList() {
+            let url = `http://${host}:5695/files`;
+
+            const fetchOptions={
+                method: "get"
+            };
+
+            try{
+                let response = await fetch(url, fetchOptions)
+                let filesList = await response.json();
+
+                let ul = document.createElement('ul');
+                for (let item of filesList) {
+                    let li = document.createElement('li');
+                    let a = document.createElement('a');
+                    let span = document.createElement('span');
+                    let br = document.createElement('br');
+                    let encUri = encodeURIComponent(item.fName);
+                    a.href = `http://${host}:5695/file/${encUri}`;
+                    a.innerText = `${item.fName}`;
+                    span.innerText = `Comment: ${item.comment}`;
+                    li.appendChild(a);
+                    li.appendChild(br)
+                    li.appendChild(span);
+                    ul.appendChild(li);
+                }
+
+                let root = document.getElementById("filmsList");
+                if(root.hasChildNodes()){
+                    while(root.firstChild){
+                        root.removeChild(root.firstChild);
+                    }
+                }
+                root.appendChild(ul);
+            }
+            catch (err) {
+                console.log(err);
+            }
         }
     </script>
 </body>

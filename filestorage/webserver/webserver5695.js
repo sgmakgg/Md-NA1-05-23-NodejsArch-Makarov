@@ -4,15 +4,16 @@ const path = require('path');
 const busboy = require('connect-busboy');
 
 const fs = require('fs');
-const {logLineAsync} = require("./utils");
+const fsp = fs.promises;
+const {logLineAsync, escapeHTML} = require("./utils");
 
 const webserver = express();
 webserver.use(express.urlencoded({extended:true}));
 
 const WebSocket = require('ws');
 const portWS = 56951;
-const server = new WebSocket.Server({ port: portWS });
-server.binaryType = 'blob';
+const WebSocketServer = new WebSocket.Server({ port: portWS });
+WebSocketServer.binaryType = 'blob';
 let clients=[];
 
 const port = 5695;
@@ -31,12 +32,17 @@ webserver.use(
 );
 
 webserver.post('/upload/:id', busboy(), async (req, res)=>{
-    logLineAsync(logFilePath,`[${port}] `+"/upload EP called");
+    logLineAsync(logFilePath,`[${port}] `+"/upload/:id EP called");
+
+    let fileObj = {fName:'', comment:''};
 
     const totalRequestLength = +req.headers["content-length"];
     let totalDownloaded = 0;
 
     let socketId = parseInt(decodeURIComponent(req.params['id']));
+
+    if(isNaN(socketId))
+        res.status(400).end();
 
     let socketIndex;
     let socket = clients.find( (item, index) => {
@@ -46,24 +52,20 @@ webserver.post('/upload/:id', busboy(), async (req, res)=>{
         }
     });
 
-    if(!socket){
+    if(!socket)
         res.status(400).end();
-    }
-
-    let reqFields = {};
-    let reqFiles = {};
 
     req.pipe(req.busboy);
 
     req.busboy.on('field', function(fieldname, val) {
-            reqFields[fieldname] = val;
+            fileObj.comment = val;
     });
 
     req.busboy.on('file', (fieldname, file, info) => {
 
-        reqFiles[fieldname]={originalFN:info.filename};
+        fileObj.fName = info.filename;
 
-        logLineAsync(logFilePath,`Uploading of '${fieldname}' started`);
+        logLineAsync(logFilePath,`Uploading of '${info.filename}' started`);
 
         const writeStream = fs.createWriteStream(path.join(__dirname,"upload", `${info.filename}`));
 
@@ -75,18 +77,77 @@ webserver.post('/upload/:id', busboy(), async (req, res)=>{
             if(socket !== null)
                 socket.connection.send('loaded '+totalDownloaded+' bytes of '+totalRequestLength)
         }).on('close', () => {
-            logLineAsync(logFilePath,'file  received');
-            socket.connection.send('file received');
+            logLineAsync(logFilePath,'WS file progress sent to client');
 
-            clients.splice(socketIndex, 1);
+            socket.connection.send('WS file progress sent to client');
             socket.connection.terminate();
-            socket = null;
 
             logLineAsync(logFilePath,`[${portWS}] `+"websocket connection closed");
         });
     });
+    req.busboy.on('finish', async () =>{
+        clients.splice(socketIndex, 1);
+        socket = null;
+        const filePath = path.join(__dirname, 'files.txt');
+        let record;
+        let fileData
+        try{
+            await fsp.access(filePath);
+            fileData = await readFile(filePath);
+            fileData.push(fileObj);
+            record = await fsp.open(filePath, 'w');
+        }
+        catch{
+            let createStream = fs.createWriteStream(filePath);
+            createStream.end();
+            record = await fsp.open(filePath, 'w');
+            fileData = [];
+            fileData.push(fileObj);
 
-    res.status(200).end();
+        }
+        finally {
+            await fsp.writeFile(record, JSON.stringify(fileData));
+            record.close();
+            res.status(200).end();
+        }
+    });
+});
+
+webserver.get('/files', async (req, res)=>{
+    logLineAsync(logFilePath,`[${port}] `+"/files EP called");
+
+    res.headers = {'Content-Type': 'application/json'};
+    let filePath = path.join(__dirname, 'files.txt');
+    try{
+        await fsp.access(filePath);
+        let fileData = await fsp.readFile(filePath,'utf8');
+        res.send(fileData);
+    }
+    catch{
+        res.status(400).end();
+    }
+});
+
+webserver.get('/file/:name', async (req, res)=>{
+    logLineAsync(logFilePath,`[${port}] `+"/file/:name EP called");
+
+    let fileName = decodeURIComponent(req.params['name']);
+
+    fileName = escapeHTML(fileName);
+    console.log(fileName);
+
+    let filePath = path.join(__dirname, 'upload', fileName);
+
+    try{
+        await fsp.access(filePath);
+        logLineAsync(logFilePath,`[${port}] file: ${fileName} is downloading`);
+        res.setHeader("Content-Disposition", "attachment");
+        let readStream = fs.createReadStream(filePath);
+        readStream.pipe(res);
+    }
+    catch{
+        res.status(400).end();
+    }
 });
 
 webserver.listen(port,()=>{
@@ -94,7 +155,7 @@ webserver.listen(port,()=>{
 });
 
 
-server.on('connection', connection => {
+WebSocketServer.on('connection', connection => {
     logLineAsync(logFilePath,`[${portWS}] `+"new connection established");
 
     connection.send('hello from server to client!');
@@ -104,4 +165,9 @@ server.on('connection', connection => {
             clients.push({id: data.wsReqId, connection: connection});
     });
 });
+
+async function readFile(filePath){
+    let fileData = await fsp.readFile(filePath,'utf8');
+    return JSON.parse(fileData);
+}
 
