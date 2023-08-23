@@ -68,10 +68,16 @@ webserver.post('/login', (req, res) => {
                         </div>` + '<div>form fields cannot be empty</div>');
         }
         else{
-            res.redirect(301,'/mysite/success.html')
+            res.redirect(301,`/success/${req.body.login}`);
         }
     }
 });
+
+webserver.get('/success/:login',(req, res)=>{
+    res.send(`<span>Congratulation! You have successfully logged in as <b>${req.params.login}</b>)</span>`);
+});
+
+
 
 webserver.listen(port,()=>{
     logLineAsync(logFilePath,"hw3097 web server running on port "+port);
