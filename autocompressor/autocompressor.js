@@ -37,48 +37,55 @@ async function compressFiles(source, destination) {
     let filesPath = source;
     let arcPath = destination;
 
-    await fsp.access(arcPath)
-        .then(() => console.log(`${'Archive path ' +arcPath+ ' exists'}`))
-        .catch(async () => {
-            console.log(`${'Archive path ' +arcPath+ ' does not exists'}`);
-            await fsp.mkdir(arcPath);
-            console.log("Archive path created");
-        });
+    try{
+        await fsp.access(arcPath);
+        console.log(`${'Archive path ' +arcPath+ ' exists'}`)
+    }
+    catch{
+        console.log(`${'Archive path ' +arcPath+ ' does not exists'}`);
+        await fsp.mkdir(arcPath);
+        console.log("Archive path created");
+    }
 
     let files = await fsp.readdir(filesPath, {withFileTypes: true});
 
     for (let file of files) {
         if (file.isFile()) {
-            await fsp.access(path.join(arcPath, `${file.name + '.gz'}`))
-                .then(async () => {
-                    console.log(`${'Archive file ' + `${file.name + '.gz'}` + ' exists'}`);
-                    let mainFile = await fsp.stat(path.join(filesPath, `${file.name}`));
-                    let arcFile = await fsp.stat(path.join(arcPath, `${file.name + '.gz'}`));
+            try {
+                await fsp.access(path.join(arcPath, `${file.name + '.gz'}`));
+                console.log(`${'Archive file ' + `${file.name + '.gz'}` + ' exists'}`);
+                let mainFile = await fsp.stat(path.join(filesPath, `${file.name}`));
+                let arcFile = await fsp.stat(path.join(arcPath, `${file.name + '.gz'}`));
 
-                    if (arcFile.mtime < mainFile.mtime) {
-                        console.log(`${'Archive file ' + `${file.name + '.gz'}` + ' older than ' + `${file.name}`}`);
-                        console.log('Recompression started: ' + file.name);
-                        await do_gzip(path.join(filesPath, file.name), path.join(arcPath, `${file.name + '.gz'}`))
-                            .catch((err) => {
-                                console.error('An error occurred:', err);
-                                process.exitCode = 1;
-                            })
-                            .then(() => console.log('File compression finished: ' + file.name));
+                if (arcFile.mtime < mainFile.mtime) {
+                    console.log(`${'Archive file ' + `${file.name + '.gz'}` + ' older than ' + `${file.name}`}`);
+                    console.log('Recompression started: ' + file.name);
+
+                    try{
+                        await do_gzip(path.join(filesPath, file.name), path.join(arcPath, `${file.name + '.gz'}`));
+                        console.log('File compression finished: ' + file.name)
                     }
-                })
-                .catch(async () => {
-                    console.log(`${'Archive file ' + `${file.name + '.gz'}` + ' does not exist'}`);
-                    console.log(`${'Source path ' + filesPath}`);
-                    console.log(`${'Destination path ' + arcPath}`);
-                    console.log('File compression started: ' + file.name);
-                    await do_gzip(path.join(filesPath, file.name), path.join(arcPath, `${file.name + '.gz'}`))
-                        .catch((err) => {
-                            console.error('An error occurred:', err);
-                            process.exitCode = 1;
-                        })
-                        .then(() => console.log('File compression finished: ' + file.name));
-                });
+                    catch(err){
+                        console.error('An error occurred:', err);
+                        process.exitCode = 1;
+                    }
+                }
+            }
+            catch {
+                console.log(`${'Archive file ' + `${file.name + '.gz'}` + ' does not exist'}`);
+                console.log(`${'Source path ' + filesPath}`);
+                console.log(`${'Destination path ' + arcPath}`);
+                console.log('File compression started: ' + file.name);
 
+                try{
+                    await do_gzip(path.join(filesPath, file.name), path.join(arcPath, `${file.name + '.gz'}`));
+                    console.log('File compression finished: ' + file.name);
+                }
+                catch(err){
+                    console.error('An error occurred:', err);
+                    process.exitCode = 1;
+                }
+            }
         }
         else if (file.isDirectory()) {
             if (file.name !== ARCDIR) {
