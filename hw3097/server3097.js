@@ -52,7 +52,6 @@ webserver.use(
 
 webserver.post('/login', (req, res) => {
     logLineAsync(logFilePath,`[${port}] `+'login endpoint called');
-    console.log(req.query);
 
     if (typeof req.body.login === 'undefined' || typeof req.body.password === 'undefined'){
         res.status(200).sendFile( path.resolve(__dirname,"static/loginForm.html"));
@@ -74,6 +73,7 @@ webserver.post('/login', (req, res) => {
 });
 
 webserver.get('/success/:login',(req, res)=>{
+    logLineAsync(logFilePath,`[${port}] `+'/success/:login endpoint called');
     res.send(`<span>Congratulation! You have successfully logged in as <b>${req.params.login}</b>)</span>`);
 });
 
