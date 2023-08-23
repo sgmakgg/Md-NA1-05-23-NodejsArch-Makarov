@@ -38,6 +38,7 @@ webserver.post('/upload/:id', busboy(), async (req, res)=>{
 
     const totalRequestLength = +req.headers["content-length"];
     let totalDownloaded = 0;
+    let wsMess = {name: "", value: ''};
 
     let socketId = parseInt(decodeURIComponent(req.params['id']));
 
@@ -73,12 +74,18 @@ webserver.post('/upload/:id', busboy(), async (req, res)=>{
         file.on('data', function(data) {
             totalDownloaded += data.length;
             logLineAsync(logFilePath,'loaded '+totalDownloaded+' bytes of '+totalRequestLength);
-            if(socket !== null)
-                socket.connection.send('loaded '+totalDownloaded+' bytes of '+totalRequestLength)
+            if(socket !== null){
+                let width = (totalDownloaded/totalRequestLength)*100;
+                wsMess = {name: "progress", value: width};
+                socket.connection.send(JSON.stringify({name: "console", value: 'loaded '+totalDownloaded+' bytes of '+totalRequestLength}));
+                socket.connection.send(JSON.stringify(wsMess));
+            }
+
         }).on('close', () => {
             logLineAsync(logFilePath,'WS file progress sent to client');
 
-            socket.connection.send('WS file progress sent to client');
+            socket.connection.send(JSON.stringify({name: "progress", value: 100}));
+            socket.connection.send(JSON.stringify({name: "console", value: 'WS file progress sent to client'}));
             socket.connection.terminate();
 
             logLineAsync(logFilePath,`[${portWS}] `+"websocket connection closed");

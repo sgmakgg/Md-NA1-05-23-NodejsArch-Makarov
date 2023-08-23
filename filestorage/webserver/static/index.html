@@ -3,6 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <title>Upload</title>
+    <style>
+        #myProgress {
+            width: 100%;
+        }
+        #myBar {
+            width: 0%;
+            height: 1vw;
+            background-color: #ddd;
+        }
+    </style>
 </head>
 <body>
     <div style="display: flex">
@@ -13,6 +23,10 @@
                 <input type="text" id="comment" name="comment"/><br><br>
                 <input type="button" value="Upload" onclick="uploadFile()">
             </form>
+            <br>
+            <div id="myProgress">
+                <div id="myBar"></div>
+            </div>
         </div>
         <div>
             <div id="filmsList">
@@ -22,8 +36,8 @@
         </div>
     </div>
     <script>
-        let host = 'msnodearch.elmiservis.by';
-        // let host = 'localhost';
+        // let host = 'msnodearch.elmiservis.by';
+        let host = 'localhost';
         function uploadFile() {
             const url = `ws://${host}:56951`;
             let connection = new WebSocket(url);
@@ -35,8 +49,12 @@
                 uploadPostReq(wsReqId);
             };
 
-            connection.onmessage = function (event) {
-                console.log(event.data); //
+            connection.onmessage = function (EO) {
+                if(JSON.parse(EO.data).name === 'console')
+                    console.log(JSON.parse(EO.data).value);
+                let progress = JSON.parse(EO.data);
+                if(progress.name === 'progress')
+                    progressBar(progress.value);
             }
 
             connection.onerror = error => {
@@ -44,7 +62,7 @@
             };
 
             connection.onclose = () => {
-                console.log("соединение с сервером закрыто");
+                console.log("Websocket connection closed");
                 connection=null;
             };
         }
@@ -61,6 +79,15 @@
             };
 
             fetch(url, fetchOptions)
+        }
+
+        function progressBar(width) {
+                let elem = document.getElementById("myBar");
+                    if (width >= 100) {
+                        elem.style.width = 0 + "%";
+                    } else {
+                        elem.style.width = width + "%";
+                    }
         }
 
         async function downloadFilesList() {
