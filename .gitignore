@@ -117,3 +117,6 @@ bundle.js.map
 *.code-workspace
 **/uploads
 nginx_caches/
+
+#dbConfig
+poolConfig.js
