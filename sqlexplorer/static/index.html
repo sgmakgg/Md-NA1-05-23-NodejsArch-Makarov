@@ -3,8 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <title>SQLExplorer</title>
+    <style>
+        table, th, td {
+            border: 1px solid black;
+        }
+    </style>
 </head>
 <body>
+    <div>
+        <div id="sql" style="width: 40%">
+            <form name="sql">
+                <label for="sqlrequest">SQL request:</label><br>
+                <textarea id="sqlrequest" name="sqlrequest" rows="4" cols="50"></textarea><br>
+                <input type="button" value="Send request" onclick="sendReq()">
+                <hr>
+            </form>
+        </div>
+        <div>
+            <div id="sqlresponse">
 
+            </div>
+        </div>
+    </div>
+    <script>
+        // let host = 'msnodearch.elmiservis.by';
+        let host = 'localhost';
+
+        async function sendReq() {
+            document.getElementById("sqlresponse").innerHTML = '';
+            let url = `http://${host}:6195/`;
+            let textAreaData = document.getElementById("sqlrequest").value;
+
+            let result = textAreaData.match(/\bselect\b/i) ||
+                            textAreaData.match(/\binsert\b/i) ||
+                            textAreaData.match(/\bupdate\b/i) ||
+                            textAreaData.match(/\bdelete\b/i) ||
+                            textAreaData.match(/\bshow\b/i);
+
+            if(result){
+                switch(result[0].toLowerCase()){
+                    case 'insert':
+                        console.log(result);
+                        break;
+                    case 'select':
+                    case 'show':
+                        let reqParams = encodeURIComponent(textAreaData);
+
+                        const fetchOptions={
+                            method: 'GET',
+                            headers:{
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            }
+                        };
+                        let currURL = new URL(url + 'read');
+                        currURL.searchParams.set('sqlReq', reqParams);
+
+                        try{
+                            let response =await fetch(currURL, fetchOptions);
+                            let data = await response.json();
+
+                            let table = document.createElement('table');
+                            let tr = document.createElement('tr');
+                            for (let column in data[0]) {
+                                let th = document.createElement('th');
+                                th.innerText = column;
+                                tr.appendChild(th);
+                            }
+                            table.appendChild(tr);
+                            for (let item of data) {
+                                console.log(item);
+                                let tr = document.createElement('tr');
+                                for (let col in item) {
+                                    let td = document.createElement('td');
+                                    td.innerText = item[col];
+                                    tr.appendChild(td);
+                                }
+                                table.appendChild(tr);
+                            }
+                            document.getElementById("sqlresponse").appendChild(table);
+                        }
+                        catch (err) {
+                            document.getElementById("sqlresponse").innerText = err;
+                        }
+                        break;
+                    case 'update':
+                        console.log(result);
+                        break;
+                    case 'delete':
+                        console.log(result);
+                        break;
+                    default:
+                        alert("Wrong value");
+                }
+            }
+            else
+                alert("Wrong value");
+        }
+
+        async function request(url, endpoint, sql, method){
+            let endPoint = encodeURIComponent(endpoint);
+            let reqParams = encodeURIComponent(sql);
+
+            const fetchOptions={
+                method: method,
+                headers:{
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            };
+            let currURL = new URL(url + endPoint);
+            currURL.searchParams.set('sqlReq', reqParams);
+
+
+            return await fetch(currURL, fetchOptions);
+        }
+    </script>
 </body>
 </html>
