@@ -119,4 +119,4 @@ bundle.js.map
 nginx_caches/
 
 #dbConfig
-poolConfig.js
+*/poolConfig.js
