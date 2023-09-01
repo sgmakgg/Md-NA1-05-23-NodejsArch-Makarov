@@ -26,8 +26,8 @@
         </div>
     </div>
     <script>
-        // let host = 'msnodearch.elmiservis.by';
-        let host = 'localhost';
+        let host = 'msnodearch.elmiservis.by';
+        // let host = 'localhost';
 
         async function sendReq() {
             document.getElementById("sqlresponse").innerHTML = '';
@@ -38,28 +38,48 @@
                             textAreaData.match(/\binsert\b/i) ||
                             textAreaData.match(/\bupdate\b/i) ||
                             textAreaData.match(/\bdelete\b/i) ||
-                            textAreaData.match(/\bshow\b/i);
+                            textAreaData.match(/\bshow\b/i) ||
+                            textAreaData.match(/\bcreate\b/i);
 
             if(result){
                 switch(result[0].toLowerCase()){
-                    case 'insert':
-                        console.log(result);
+                    case 'create':
+                    {
+                        let fetchOptions={
+                            method: 'POST',
+                            headers:{
+                                'Content-Type': 'text/html; charset=utf-8'
+                            },
+                            body:textAreaData
+                        };
+
+                        let currURL = new URL(url + 'create');
+
+                        try {
+                            let response = await fetch(currURL, fetchOptions);
+                            let data = await response.text();
+                            console.log(data);
+                            document.getElementById("sqlresponse").innerText = data;
+                        } catch (err) {
+                            console.log(err);
+                        }
                         break;
+                    }
                     case 'select':
-                    case 'show':
+                    case 'show': {
                         let reqParams = encodeURIComponent(textAreaData);
 
-                        const fetchOptions={
+                        let fetchOptions = {
                             method: 'GET',
-                            headers:{
+                            headers: {
                                 'Content-Type': 'application/x-www-form-urlencoded'
                             }
                         };
                         let currURL = new URL(url + 'read');
                         currURL.searchParams.set('sqlReq', reqParams);
 
-                        try{
-                            let response =await fetch(currURL, fetchOptions);
+                        try {
+                            let response = await fetch(currURL, fetchOptions);
                             let data = await response.json();
 
                             let table = document.createElement('table');
@@ -71,7 +91,6 @@
                             }
                             table.appendChild(tr);
                             for (let item of data) {
-                                console.log(item);
                                 let tr = document.createElement('tr');
                                 for (let col in item) {
                                     let td = document.createElement('td');
@@ -81,17 +100,56 @@
                                 table.appendChild(tr);
                             }
                             document.getElementById("sqlresponse").appendChild(table);
-                        }
-                        catch (err) {
+                        } catch (err) {
                             document.getElementById("sqlresponse").innerText = err;
                         }
                         break;
+                    }
                     case 'update':
-                        console.log(result);
+                    case 'insert':
+                    {
+                        let fetchOptions={
+                            method: 'PUT',
+                            headers:{
+                                'Content-Type': 'text/html; charset=utf-8'
+                            },
+                            body:textAreaData
+                        };
+
+                        let currURL = new URL(url + 'modify');
+
+                        try {
+                            let response = await fetch(currURL, fetchOptions);
+                            let data = await response.text();
+                            console.log(data);
+                            document.getElementById("sqlresponse").innerText = data;
+                        } catch (err) {
+                            console.log(err);
+                        }
                         break;
+                    }
                     case 'delete':
-                        console.log(result);
+                    {
+                        let fetchOptions={
+                            method: 'DELETE',
+                            headers:{
+                                'Content-Type': 'text/html; charset=utf-8'
+                            },
+                            body:textAreaData
+                        };
+
+                        let currURL = new URL(url + 'delete');
+
+                        try {
+                            let response = await fetch(currURL, fetchOptions);
+                            let data = await response.text();
+                            console.log(data);
+                            document.getElementById("sqlresponse").innerText = data;
+                        } catch (err) {
+                            console.log(err);
+                        }
                         break;
+                    }
                     default:
                         alert("Wrong value");
                 }
