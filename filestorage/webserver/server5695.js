@@ -1,25 +1,42 @@
 const express = require('express');
 const path = require('path');
 
-const busboy = require('connect-busboy');
-
 const fs = require('fs');
 const fsp = fs.promises;
-const {logLineAsync, escapeHTML} = require("./utils");
 
+const {logLineAsync, escapeHTML} = require("./utils");
+const logFilePath = path.join(__dirname, '_server.log');
+
+//webserver
 const webserver = express();
 webserver.use(express.urlencoded({extended:true}));
+const bodyParser = require('body-parser');
+const busboy = require('connect-busboy');
 
+//websocket
 const WebSocket = require('ws');
 const portWS = 56951;
 const WebSocketServer = new WebSocket.Server({ port: portWS });
 WebSocketServer.binaryType = 'blob';
 let clients=[];
 
+//db
 const port = 5695;
-const logFilePath = path.join(__dirname, '_server.log');
 
-logLineAsync(logFilePath,"socket server running on port "+portWS);
+const mysql=require("mysql");
+const {poolConfig} = require("./db/poolConfig");
+const {newConnectionFactory, selectQueryFactory, modifyQueryFactory} = require("./db/db_utils");
+let pool = mysql.createPool(poolConfig);
+
+function reportServerError(error,res) {
+    res.status(500).end();
+    logLineAsync(logFilePath,`[${port}] `+error);
+}
+
+function reportRequestError(error,res) {
+    res.status(400).send(error);
+    logLineAsync(logFilePath,`[${port}] `+error);
+}
 
 webserver.use(function (req, res, next) {
     logLineAsync(logFilePath,`[${port}] `+"static server called, originalUrl="+req.originalUrl);
