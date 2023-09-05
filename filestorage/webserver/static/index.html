@@ -13,7 +13,7 @@
             width: 100%;
         }
         #bar {
-            width: 0%;
+            width: 0;
             height: 1vw;
             background-color: #ddd;
         }
@@ -114,7 +114,9 @@
             width: 100%;
         }
 
-        button {
+        button,
+        #signinButton,
+        #signupButton {
             border-radius: 20px;
             border: 1px solid #ff4b2b;
             background: #ff445c;
@@ -127,11 +129,15 @@
             transition: transform 80ms ease-in;
         }
 
-        button:active {
+        button:active,
+        #signinButton:active,
+        #signupButton:active {
             transform: scale(.95);
         }
 
-        button:focus {
+        button:focus,
+        #signinButton:focus,
+        #signupButton:focus {
             outline: none;
         }
 
@@ -253,25 +259,25 @@
         <!-- Sign in -->
             <div class="container" id="container">
                 <div class="form-container sign-up-container">
-                    <form action="#">
+                    <form name="registration" enctype='multipart/form-data'>
                         <h1>Create Account</h1>
 
                         <span>or use your email for registration</span>
-                        <input type="text" placeholder="Name" />
-                        <input type="email" placeholder="Email" />
-                        <input type="password" placeholder="Password" />
-                        <button>Sign Up</button>
+                        <input type="text" placeholder="Name" name="name"/>
+                        <input type="email" placeholder="Email" name="email"/>
+                        <input type="password" placeholder="Password" name="password"/>
+                        <input type="button" id="signupButton" value="Sign Up" onclick="register()">
                     </form>
                 </div>
                 <div class="form-container sign-in-container">
-                    <form action="#">
+                    <form name="signIn" enctype='multipart/form-data'>
                         <h1>Sign in</h1>
 
                         <span>or use your account</span>
-                        <input type="email" placeholder="Email" />
-                        <input type="password" placeholder="Password" />
+                        <input type="email" placeholder="Email" name="email"/>
+                        <input type="password" placeholder="Password" name="password"/>
                         <a href="#">Forgot your password?</a>
-                        <button>Sign In</button>
+                        <input type="button" id="signinButton" value="Sign In" onclick="fsLogin()">
                     </form>
                 </div>
                 <div class="overlay-container">
@@ -442,6 +448,67 @@
 
         signInButton.addEventListener('click', () =>
             container.classList.remove('right-panel-active'));
+
+        async function register(){
+            let user = await formDataMap(document.forms["registration"]);
+            user.formType = 'registration';
+            await userAuthorization(user);
+        }
+
+        async function fsLogin(){
+            let user = await formDataMap(document.forms["signIn"]);
+            user.formType = 'login';
+            console.log(user);
+            await userAuthorization(user);
+        }
+
+        async function formDataMap(form){
+            let user = {};
+
+            if(form.elements.name !== undefined){
+                user.name = form.elements.name.value || '';
+            }
+            user.email = form.elements.email.value;
+
+            user.password = await digestMessage(form.elements.password.value.toString() + 'soyabeans').then(digestValue => {
+                return hexString(digestValue)
+            });
+
+            return user;
+        }
+
+        async function userAuthorization(user){
+            let url = `http://${host}:5695/auth`;
+            const fetchOptions={
+                method: "post",
+                body: JSON.stringify(user)
+            };
+            try {
+                let response = await fetch(url, fetchOptions);
+                console.log(response);
+            }
+            catch (err){
+                console.log(err);
+            }
+        }
+
+        // https://contest-server.cs.uchicago.edu/ref/JavaScript/developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/digest.html
+        function hexString(buffer) {
+            const byteArray = new Uint8Array(buffer);
+
+            const hexCodes = [...byteArray].map(value => {
+                const hexCode = value.toString(16);
+                return hexCode.padStart(2, '0');
+            });
+
+            return hexCodes.join('');
+        }
+
+        function digestMessage(message) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(message);
+            return window.crypto.subtle.digest('SHA-256', data);
+        }
     </script>
 </body>
 </html>
