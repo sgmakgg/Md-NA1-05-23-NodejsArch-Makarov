@@ -28,6 +28,27 @@ const {poolConfig} = require("./db/poolConfig");
 const {newConnectionFactory, selectQueryFactory, modifyQueryFactory} = require("./db/db_utils");
 let pool = mysql.createPool(poolConfig);
 
+
+//session
+let session = require('express-session');
+const MySQLStore = require('express-mysql-session')(session);
+const sessionStore = new MySQLStore({clearExpired: true,
+                                                checkExpirationInterval: 900000,
+                                                expiration: 86400000,
+                                                createDatabaseTable: true,
+                                                endConnectionOnClose: true }/* session store options */,
+                                                pool);
+let auth = function (req, res, next){
+    logLineAsync(logFilePath, "auth middleware , authentication status: " + req.session.user_auth);
+
+    if(req.session.user_auth !== undefined){
+        next();
+    }
+    else{
+        res.status(401).end();
+    }
+}
+
 function reportServerError(error,res) {
     res.status(500).end();
     logLineAsync(logFilePath,`[${port}] `+error);
@@ -37,6 +58,8 @@ function reportRequestError(error,res) {
     res.status(400).send(error);
     logLineAsync(logFilePath,`[${port}] `+error);
 }
+
+webserver.use(bodyParser.json());
 
 webserver.use(function (req, res, next) {
     logLineAsync(logFilePath,`[${port}] `+"static server called, originalUrl="+req.originalUrl);
@@ -48,7 +71,92 @@ webserver.use(
     express.static(path.resolve(__dirname,"static"))
 );
 
-webserver.post('/upload/:id', busboy(), async (req, res)=>{
+webserver.use(session({
+    key: 'user_session',
+    secret: 'user_secret',
+    store: sessionStore,
+    resave: false,
+    saveUninitialized: false
+}));
+
+webserver.post('/auth', async (req, res)=>{
+    logLineAsync(logFilePath,`[${port}] `+"/auth EP called", req.body);
+
+    let validationOk = true;
+
+    if(req.body === {} || req.body.email === '' || req.body.password ===''){
+        validationOk =false;
+    }
+
+    let connection=null;
+    if(validationOk){
+        if(req.body.authType === 'registration'){
+            try {
+                connection = await newConnectionFactory(pool, res);
+
+                await modifyQueryFactory(connection,
+                    `insert into users(name, email, password) 
+                        values(?,?,?);`,
+                    [req.body.name, req.body.email, req.body.password]);
+
+                req.session.user_auth = true;
+                req.session.user_email = req.body.email;
+
+                res.status(200).end();
+            }
+            catch (err) {
+                reportServerError(err,res);
+            }
+            finally {
+                if ( connection )
+                    connection.release();
+            }
+        }
+        else if(req.body.authType === 'login'){
+            connection = await newConnectionFactory(pool, res);
+
+            try{
+                let userId = await selectQueryFactory(connection,
+                    `select user_id 
+                            from users
+                            where email=? and password=?;`,
+                    [req.body.email, req.body.password]);
+
+
+                if(userId.length !== 0){
+                    req.session.user_auth = true;
+                    req.session.user_email = req.body.email;
+                    res.status(200).end();
+                }
+                else{
+                    res.status(401).end();
+                }
+            }
+            catch (err) {
+                reportServerError(err,res);
+            }
+            finally {
+                if ( connection )
+                    connection.release();
+            }
+        }
+        else{
+            req.session.destroy();
+            res.status(401).end();
+        }
+    }
+    else {
+        reportRequestError('Validation error', res);
+    }
+});
+
+webserver.get('/logout', auth, (req, res)=>{
+    req.session.destroy();
+    res.status(200).end();
+});
+
+webserver.post('/upload/:id', auth, busboy(), async (req, res)=>{
+
     logLineAsync(logFilePath,`[${port}] `+"/upload/:id EP called");
 
     let fileObj = {fName:'', comment:''};
@@ -79,12 +187,16 @@ webserver.post('/upload/:id', busboy(), async (req, res)=>{
             fileObj.comment = val;
     });
 
-    req.busboy.on('file', (fieldname, file, info) => {
+    req.busboy.on('file', async (fieldname, file, info) => {
         fileObj.fName = Buffer.from(info.filename, 'latin1').toString('utf8');
 
         logLineAsync(logFilePath,`Uploading of '${fileObj.fName}' started`);
 
-        const writeStream = fs.createWriteStream(path.join(__dirname,"upload", `${fileObj.fName}`));
+        if(!fs.existsSync(path.join(__dirname,"upload", req.session.user_email))){
+            await fsp.mkdir(path.join(__dirname,"upload", req.session.user_email));
+        }
+
+        const writeStream = fs.createWriteStream(path.join(__dirname,"upload", req.session.user_email, `${fileObj.fName}`));
 
         file.pipe(writeStream);
 
@@ -111,13 +223,18 @@ webserver.post('/upload/:id', busboy(), async (req, res)=>{
     req.busboy.on('finish', async () =>{
         clients.splice(socketIndex, 1);
         socket = null;
-        const filePath = path.join(__dirname, 'files.txt');
+        const filePath = path.join(__dirname, 'upload', req.session.user_email, 'files.txt');
         let record;
         let fileData
         try{
             await fsp.access(filePath);
             fileData = await readFile(filePath);
-            fileData.push(fileObj);
+            let arr = fileData.filter(item => {
+                if(item.fName !== fileObj.fName)
+                    return item;
+            });
+            arr.push(fileObj);
+            fileData = arr;
             record = await fsp.open(filePath, 'w');
         }
         catch{
@@ -136,11 +253,11 @@ webserver.post('/upload/:id', busboy(), async (req, res)=>{
     });
 });
 
-webserver.get('/files', async (req, res)=>{
+webserver.get('/files', auth, async (req, res)=>{
     logLineAsync(logFilePath,`[${port}] `+"/files EP called");
 
     res.headers = {'Content-Type': 'application/json'};
-    let filePath = path.join(__dirname, 'files.txt');
+    let filePath = path.join(__dirname, 'upload', req.session.user_email, 'files.txt');
     try{
         await fsp.access(filePath);
         let fileData = await fsp.readFile(filePath,'utf8');
@@ -151,14 +268,14 @@ webserver.get('/files', async (req, res)=>{
     }
 });
 
-webserver.get('/file/:name', async (req, res)=>{
+webserver.get('/file/:name', auth, async (req, res)=>{
     logLineAsync(logFilePath,`[${port}] `+"/file/:name EP called");
 
     let fileName = decodeURIComponent(req.params['name']);
 
     fileName = escapeHTML(fileName);
 
-    let filePath = path.join(__dirname, 'upload', fileName);
+    let filePath = path.join(__dirname, 'upload', req.session.user_email, fileName);
 
     try{
         await fsp.access(filePath);
@@ -180,7 +297,7 @@ webserver.listen(port,()=>{
 WebSocketServer.on('connection', connection => {
     logLineAsync(logFilePath,`[${portWS}] `+"new connection established");
 
-    connection.send('hello from server to client!');
+    connection.send(JSON.stringify({name: "console", value: 'Web socket connection established'}));
     connection.on('message', async message => {
             const reader = await new Response(message).text();
             let data = JSON.parse(reader);

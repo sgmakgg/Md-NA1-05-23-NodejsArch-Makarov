@@ -249,7 +249,8 @@
 </head>
 <body>
     <div style="margin-bottom: 1vh; display: flex; flex-direction: row-reverse; max-width: 40%">
-        <input style="display: none" type="button" id="login" value="Login">
+        <input style="display: block" type="button" id="login" value="Login">
+        <input style="display: none" type="button" id="logout" value="Logout" onclick="logout()">
     </div>
     <div style="display: block" id="modal" class="modal">
 
@@ -297,7 +298,7 @@
             </div>
         </div>
     </div>
-    <div style="display: none">
+    <div id="mainPage" style="display: none">
         <div id="upload" style="width: 25%; min-height: 65%">
             <form name="uploadForm" enctype='multipart/form-data'>
                 <input type="file" id="file" name="file"/><br><br>
@@ -321,36 +322,39 @@
         // let host = 'msnodearch.elmiservis.by';
         let host = 'localhost';
         function uploadFile() {
-            const url = `ws://${host}:56951`;
-            let connection = new WebSocket(url);
+            if(document.getElementById('file').files.length !== 0){
+                const url = `ws://${host}:56951`;
+                let connection = new WebSocket(url);
 
-            connection.onopen = () => {
-                let wsReqId = Math.floor(Math.random() * 100000);
-                let blob = new Blob([JSON.stringify({wsReqId: wsReqId})], {type: "application/json"});
-                connection.send(blob);
-                uploadPostReq(wsReqId);
-            };
+                connection.onopen = () => {
+                    let wsReqId = Math.floor(Math.random() * 100000);
+                    let blob = new Blob([JSON.stringify({wsReqId: wsReqId})], {type: "application/json"});
+                    connection.send(blob);
+                    uploadPostReq(wsReqId);
+                };
 
-            connection.onmessage = function (EO) {
-                if(JSON.parse(EO.data).name === 'console')
-                    console.log(JSON.parse(EO.data).value);
-                let progress = JSON.parse(EO.data);
-                if(progress.name === 'progress')
-                    progressBar(progress.value);
+                connection.onmessage = function (EO) {
+                    if(JSON.parse(EO.data).name === 'console')
+                        console.log(JSON.parse(EO.data).value);
+                    let progress = JSON.parse(EO.data);
+                    if(progress.name === 'progress')
+                        progressBar(progress.value);
+                }
+
+                connection.onerror = error => {
+                    console.log('WebSocket error:',error);
+                };
+
+                connection.onclose = () => {
+                    console.log("Websocket connection closed");
+                    connection=null;
+                };
             }
-
-            connection.onerror = error => {
-                console.log('WebSocket error:',error);
-            };
-
-            connection.onclose = () => {
-                console.log("Websocket connection closed");
-                connection=null;
-            };
         }
 
-        function uploadPostReq(wsReqId) {
+        async function uploadPostReq(wsReqId) {
             let formData = document.forms['uploadForm'];
+            console.log(formData);
             let reqData = new FormData(formData);
             let wsId = encodeURIComponent(wsReqId);
             let url = `http://${host}:5695/upload/` + `${wsId}`;
@@ -360,11 +364,22 @@
                 body: reqData
             };
 
-            fetch(url, fetchOptions)
+            let response = await fetch(url, fetchOptions);
+            if(response.status === 401){
+                authPage();
+            }
+        }
+
+        async function logout(){
+            let url = `http://${host}:5695/logout`;
+            let response = await fetch(url, {method: 'get'});
+            if(response.status === 200){
+                authPage();
+            }
         }
 
         function progressBar(width) {
-                let elem = document.getElementById("myBar");
+                let elem = document.getElementById("bar");
                     if (width >= 100) {
                         elem.style.width = 0 + "%";
                     } else {
@@ -381,31 +396,37 @@
 
             try{
                 let response = await fetch(url, fetchOptions)
-                let filesList = await response.json();
 
-                let ul = document.createElement('ul');
-                for (let item of filesList) {
-                    let li = document.createElement('li');
-                    let a = document.createElement('a');
-                    let span = document.createElement('span');
-                    let br = document.createElement('br');
-                    let encUri = encodeURIComponent(item.fName);
-                    a.href = `http://${host}:5695/file/${encUri}`;
-                    a.innerText = `${item.fName}`;
-                    span.innerText = `Comment: ${item.comment}`;
-                    li.appendChild(a);
-                    li.appendChild(br)
-                    li.appendChild(span);
-                    ul.appendChild(li);
-                }
+                if(response.status === 200){
+                    let filesList = await response.json();
 
-                let root = document.getElementById("filmsList");
-                if(root.hasChildNodes()){
-                    while(root.firstChild){
-                        root.removeChild(root.firstChild);
+                    let ul = document.createElement('ul');
+                    for (let item of filesList) {
+                        let li = document.createElement('li');
+                        let a = document.createElement('a');
+                        let span = document.createElement('span');
+                        let br = document.createElement('br');
+                        let encUri = encodeURIComponent(item.fName);
+                        a.href = `http://${host}:5695/file/${encUri}`;
+                        a.innerText = `${item.fName}`;
+                        span.innerText = `Comment: ${item.comment}`;
+                        li.appendChild(a);
+                        li.appendChild(br)
+                        li.appendChild(span);
+                        ul.appendChild(li);
                     }
+
+                    let root = document.getElementById("filmsList");
+                    if(root.hasChildNodes()){
+                        while(root.firstChild){
+                            root.removeChild(root.firstChild);
+                        }
+                    }
+                    root.appendChild(ul);
                 }
-                root.appendChild(ul);
+                if(response.status === 401){
+                    authPage();
+                }
             }
             catch (err) {
                 console.log(err);
@@ -451,7 +472,7 @@
 
         async function register(){
             let user = await formDataMap(document.forms["registration"]);
-            user.formType = 'registration';
+            user.authType = 'registration';
             await userAuthorization(user);
         }
 
@@ -465,7 +486,7 @@
             let user = {};
 
             if(form.elements.name !== undefined){
-                user.name = form.elements.name.value || '';
+                user.name = form.elements.name.value || 'unnamed';
             }
             user.email = form.elements.email.value;
 
@@ -487,7 +508,12 @@
             };
             try {
                 let response = await fetch(url, fetchOptions);
-                console.log(response);
+                if(response.status === 200){
+                    mainPage();
+                }
+                if(response.status === 401 || response.status === 400){
+                    console.log('check credentials, fill up email&password properties')
+                }
             }
             catch (err){
                 console.log(err);
@@ -510,6 +536,34 @@
             const encoder = new TextEncoder();
             const data = encoder.encode(message);
             return window.crypto.subtle.digest('SHA-256', data);
+        }
+
+        function mainPage(){
+            let modal = document.getElementById('modal');
+            modal.style.display = 'none';
+
+            let mainPage = document.getElementById('mainPage');
+            mainPage.style.display = 'flex';
+
+            let loginBtn = document.getElementById('login');
+            loginBtn.style.display = 'none';
+
+            let logoutBtn = document.getElementById('logout');
+            logoutBtn.style.display = 'block';
+        }
+
+        function authPage(){
+            let modal = document.getElementById('modal');
+            modal.style.display = 'block';
+
+            let mainPage = document.getElementById('mainPage');
+            mainPage.style.display = 'none';
+
+            let loginBtn = document.getElementById('login');
+            loginBtn.style.display = 'block';
+
+            let logoutBtn = document.getElementById('logout');
+            logoutBtn.style.display = 'none';
         }
     </script>
 </body>

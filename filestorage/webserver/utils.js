@@ -44,7 +44,6 @@ function escapeHTML(text) {
     return text;
 }
 
-
 module.exports={
     logLineAsync,
     escapeHTML
