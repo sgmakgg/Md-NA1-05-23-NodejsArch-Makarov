@@ -118,7 +118,7 @@ webserver.post('/auth', async (req, res)=>{
 
 
                 mailOptions.to = req.body.email;
-                mailOptions.text = 'verification reference:' + `http://${host}:5695/verification/${emailVerificationRef}`;
+                mailOptions.text = 'verification reference:' + `https://${host}:8443/verification/${emailVerificationRef}`;
                 sendEmail(transporter, mailOptions);
 
                 res.status(201).end();
@@ -185,7 +185,7 @@ webserver.get('/verification/:emailVerificationRef', async(req, res)=>{
                     WHERE user_id IN (SELECT user_id FROM users WHERE email_verification_ref = ?);`,
             [emailVerificationRef]);
 
-        res.redirect(301, `http://${host}:5695/mysite`);
+        res.redirect(301, `https://${host}:8443/mysite`);
     }
     catch (err) {
         res.status(500).end();
