@@ -38,6 +38,14 @@ const sessionStore = new MySQLStore({clearExpired: true,
                                                 createDatabaseTable: true,
                                                 endConnectionOnClose: true }/* session store options */,
                                                 pool);
+
+//email
+const {sendEmail, mailOptions} = require("./email/nodemailer");
+const {transporter} = require("./email/transportConfig");
+
+//host
+const host = process.env.NODE_ENV === 'production' ? 'msnodearch.elmiservis.by' : 'localhost';
+
 let auth = function (req, res, next){
     logLineAsync(logFilePath, "auth middleware , authentication status: " + req.session.user_auth);
 
@@ -92,17 +100,20 @@ webserver.post('/auth', async (req, res)=>{
     if(validationOk){
         if(req.body.authType === 'registration'){
             try {
+                let emailVerificationRef = Math.floor(Math.random() * 100000);
+
                 connection = await newConnectionFactory(pool, res);
-
                 await modifyQueryFactory(connection,
-                    `insert into users(name, email, password) 
-                        values(?,?,?);`,
-                    [req.body.name, req.body.email, req.body.password]);
+                    `insert into users(name, email, password, email_verification_ref, email_verified) 
+                        values(?,?,?,?,?);`,
+                    [req.body.name, req.body.email, req.body.password, emailVerificationRef, false]);
 
-                req.session.user_auth = true;
-                req.session.user_email = req.body.email;
 
-                res.status(200).end();
+                mailOptions.to = req.body.email;
+                mailOptions.text = 'verification reference:' + `http://${host}:5695/verification/${emailVerificationRef}`;
+                sendEmail(transporter, mailOptions);
+
+                res.status(201).end();
             }
             catch (err) {
                 reportServerError(err,res);
@@ -116,14 +127,13 @@ webserver.post('/auth', async (req, res)=>{
             connection = await newConnectionFactory(pool, res);
 
             try{
-                let userId = await selectQueryFactory(connection,
-                    `select user_id 
+                let userObj = await selectQueryFactory(connection,
+                    `select email_verified 
                             from users
                             where email=? and password=?;`,
                     [req.body.email, req.body.password]);
 
-
-                if(userId.length !== 0){
+                if(userObj.length !== 0 && userObj[0].email_verified){
                     req.session.user_auth = true;
                     req.session.user_email = req.body.email;
                     res.status(200).end();
@@ -153,6 +163,25 @@ webserver.post('/auth', async (req, res)=>{
 webserver.get('/logout', auth, (req, res)=>{
     req.session.destroy();
     res.status(200).end();
+});
+
+webserver.get('/verification/:emailVerificationRef', async(req, res)=>{
+    logLineAsync(logFilePath,`[${port}] `+"/verification/:emailVerificationRef  called");
+
+    try{
+        let emailVerificationRef = parseInt(req.params['emailVerificationRef']);
+        let connection = await newConnectionFactory(pool, res);
+        await modifyQueryFactory(connection,
+            `UPDATE users 
+                    SET email_verified = TRUE, email_verification_ref = NULL 
+                    WHERE user_id IN (SELECT user_id FROM users WHERE email_verification_ref = ?);`,
+            [emailVerificationRef]);
+
+        res.redirect(301, `http://${host}:5695/mysite`);
+    }
+    catch (err) {
+        res.status(500).end();
+    }
 });
 
 webserver.post('/upload/:id', auth, busboy(), async (req, res)=>{
