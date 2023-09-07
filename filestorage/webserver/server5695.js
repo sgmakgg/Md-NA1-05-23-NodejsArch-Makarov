@@ -52,7 +52,7 @@ const {sendEmail, mailOptions} = require("./email/nodemailer");
 const {transporter} = require("./email/transportConfig");
 
 //host
-const host = process.env.NODE_ENV === 'production' ? 'msnodearch.elmiservis.by/' : 'localhost';
+const host = process.env.NODE_ENV === 'production' ? 'msnodearch.elmiservis.by' : 'localhost';
 
 let auth = function (req, res, next){
     logLineAsync(logFilePath, "auth middleware , authentication status: " + req.session.user_auth);
