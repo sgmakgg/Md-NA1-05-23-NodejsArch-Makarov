@@ -52,7 +52,7 @@ const {sendEmail, mailOptions} = require("./email/nodemailer");
 const {transporter} = require("./email/transportConfig");
 
 //host
-const host = process.env.NODE_ENV === 'production' ? 'msnodearch.elmiservis.by' : 'localhost';
+const host = process.env.NODE_ENV === 'production' ? 'msnodearch.elmiservis.by/' : 'localhost';
 
 let auth = function (req, res, next){
     logLineAsync(logFilePath, "auth middleware , authentication status: " + req.session.user_auth);
@@ -174,16 +174,24 @@ webserver.get('/logout', auth, (req, res)=>{
 });
 
 webserver.get('/verification/:emailVerificationRef', async(req, res)=>{
-    logLineAsync(logFilePath,`[${port}] `+"/verification/:emailVerificationRef  called");
 
     try{
         let emailVerificationRef = parseInt(req.params['emailVerificationRef']);
+        logLineAsync(logFilePath,`[${port}] `+"/verification/:emailVerificationRef  called " + emailVerificationRef);
+
         let connection = await newConnectionFactory(pool, res);
-        await modifyQueryFactory(connection,
-            `UPDATE users 
-                    SET email_verified = TRUE, email_verification_ref = NULL 
-                    WHERE user_id IN (SELECT user_id FROM users WHERE email_verification_ref = ?);`,
+
+        let user = await selectQueryFactory(connection,
+            `SELECT user_id FROM users WHERE email_verification_ref = ?`,
             [emailVerificationRef]);
+
+        await modifyQueryFactory(connection,
+            `UPDATE users
+                    SET email_verified = TRUE, email_verification_ref = NULL
+                    WHERE user_id  = ?;`,
+            [user[0].user_id]);
+
+
 
         res.redirect(301, `https://${host}:8443/mysite`);
     }
