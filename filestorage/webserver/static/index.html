@@ -358,7 +358,7 @@
             console.log(formData);
             let reqData = new FormData(formData);
             let wsId = encodeURIComponent(wsReqId);
-            let url = `http://${host}:5695/upload/` + `${wsId}`;
+            let url = `https://${host}:8443/upload/` + `${wsId}`;
 
             const fetchOptions={
                 method: "post",
@@ -372,7 +372,7 @@
         }
 
         async function logout(){
-            let url = `http://${host}:5695/logout`;
+            let url = `https://${host}:8443/logout`;
             let response = await fetch(url, {method: 'get'});
             if(response.status === 200){
                 authPage();
@@ -389,7 +389,7 @@
         }
 
         async function downloadFilesList() {
-            let url = `http://${host}:5695/files`;
+            let url = `https://${host}:8443/files`;
 
             const fetchOptions={
                 method: "get"
@@ -408,7 +408,7 @@
                         let span = document.createElement('span');
                         let br = document.createElement('br');
                         let encUri = encodeURIComponent(item.fName);
-                        a.href = `http://${host}:5695/file/${encUri}`;
+                        a.href = `https://${host}:8443/file/${encUri}`;
                         a.innerText = `${item.fName}`;
                         span.innerText = `Comment: ${item.comment}`;
                         li.appendChild(a);
@@ -499,7 +499,7 @@
         }
 
         async function userAuthorization(user){
-            let url = `http://${host}:5695/auth`;
+            let url = `https://${host}:8443/auth`;
             const fetchOptions={
                 method: "post",
                 headers:{

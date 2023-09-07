@@ -4,6 +4,14 @@ const path = require('path');
 const fs = require('fs');
 const fsp = fs.promises;
 
+
+let https = require('https');
+
+let privateKey  = fs.readFileSync('cert/key.pem');
+let certificate = fs.readFileSync('cert/cert.pem');
+let credentials = {key: privateKey, cert: certificate, passphrase:'qwerty'};
+
+
 const {logLineAsync, escapeHTML} = require("./utils");
 const logFilePath = path.join(__dirname, '_server.log');
 
@@ -322,6 +330,9 @@ webserver.listen(port,()=>{
     logLineAsync(logFilePath,"web server running on port "+port);
 });
 
+
+let httpsServer = https.createServer(credentials, webserver);
+httpsServer.listen(8443);
 
 WebSocketServer.on('connection', connection => {
     logLineAsync(logFilePath,`[${portWS}] `+"new connection established");
