@@ -21,11 +21,6 @@ webserver.use(express.urlencoded({extended:true}));
 const bodyParser = require('body-parser');
 const busboy = require('connect-busboy');
 
-//websocket
-const WebSocket = require('ws');
-const portWS = 56951;
-const WebSocketServer = new WebSocket.Server({ port: portWS });
-WebSocketServer.binaryType = 'blob';
 let clients=[];
 
 //db
@@ -340,7 +335,16 @@ webserver.listen(port,()=>{
 
 
 let httpsServer = https.createServer(credentials, webserver);
+
+//websocket
+let wss = https.createServer(credentials);
+const WebSocket = require('ws');
+const portWS = 56951;
+const WebSocketServer = new WebSocket.Server({server: wss});
+WebSocketServer.binaryType = 'blob';
+
 httpsServer.listen(8443);
+wss.listen(portWS);
 
 WebSocketServer.on('connection', connection => {
     logLineAsync(logFilePath,`[${portWS}] `+"new connection established");

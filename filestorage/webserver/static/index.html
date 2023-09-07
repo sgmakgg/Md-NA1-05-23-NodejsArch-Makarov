@@ -324,7 +324,7 @@
         // let host = 'localhost';
         function uploadFile() {
             if(document.getElementById('file').files.length !== 0){
-                const url = `ws://${host}:56951`;
+                const url = `wss://${host}:56951`;
                 let connection = new WebSocket(url);
 
                 connection.onopen = () => {
@@ -381,7 +381,7 @@
 
         function progressBar(width) {
                 let elem = document.getElementById("bar");
-                    if (width >= 100) {
+                    if (width >= 95) {
                         elem.style.width = 0 + "%";
                     } else {
                         elem.style.width = width + "%";
