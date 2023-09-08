@@ -170,11 +170,12 @@ webserver.get('/logout', auth, (req, res)=>{
 
 webserver.get('/verification/:emailVerificationRef', async(req, res)=>{
 
+    let connection;
     try{
         let emailVerificationRef = parseInt(req.params['emailVerificationRef']);
         logLineAsync(logFilePath,`[${port}] `+"/verification/:emailVerificationRef  called " + emailVerificationRef);
 
-        let connection = await newConnectionFactory(pool, res);
+        connection = await newConnectionFactory(pool, res);
 
         let user = await selectQueryFactory(connection,
             `SELECT user_id FROM users WHERE email_verification_ref = ?`,
@@ -186,12 +187,14 @@ webserver.get('/verification/:emailVerificationRef', async(req, res)=>{
                     WHERE user_id  = ?;`,
             [user[0].user_id]);
 
-
-
         res.redirect(301, `https://${host}:8443/mysite`);
     }
     catch (err) {
         res.status(500).end();
+    }
+    finally {
+        if ( connection )
+            connection.release();
     }
 });
 
@@ -253,7 +256,6 @@ webserver.post('/upload/:id', auth, busboy(), async (req, res)=>{
         }).on('close', () => {
             logLineAsync(logFilePath,'WS file progress sent to client');
 
-            socket.connection.send(JSON.stringify({name: "progress", value: 100}));
             socket.connection.send(JSON.stringify({name: "console", value: 'WS file progress sent to client'}));
             socket.connection.terminate();
 
@@ -333,8 +335,9 @@ webserver.listen(port,()=>{
     logLineAsync(logFilePath,"web server running on port "+port);
 });
 
-
+//https
 let httpsServer = https.createServer(credentials, webserver);
+httpsServer.listen(8443);
 
 //websocket
 let wss = https.createServer(credentials);
@@ -342,8 +345,6 @@ const WebSocket = require('ws');
 const portWS = 56951;
 const WebSocketServer = new WebSocket.Server({server: wss});
 WebSocketServer.binaryType = 'blob';
-
-httpsServer.listen(8443);
 wss.listen(portWS);
 
 WebSocketServer.on('connection', connection => {
