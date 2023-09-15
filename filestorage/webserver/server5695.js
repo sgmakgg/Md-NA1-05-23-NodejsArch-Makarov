@@ -35,12 +35,13 @@ let pool = mysql.createPool(poolConfig);
 //session
 let session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
-const sessionStore = new MySQLStore({clearExpired: true,
-                                                checkExpirationInterval: 900000,
-                                                expiration: 86400000,
-                                                createDatabaseTable: true,
-                                                endConnectionOnClose: true }/* session store options */,
-                                                pool);
+const sessionStore = new MySQLStore({
+                                    clearExpired: true,
+                                    checkExpirationInterval: (1000*60*15), //900000
+                                    expiration: (1000*60*60*24), //86400000
+                                    createDatabaseTable: true,
+                                    endConnectionOnClose: true }/* session store options */,
+                                    pool);
 
 //email
 const {sendEmail, mailOptions} = require("./email/nodemailer");
@@ -164,11 +165,16 @@ webserver.post('/auth', async (req, res)=>{
 });
 
 webserver.get('/logout', auth, (req, res)=>{
+    res.set({'Cache-Control':'no-cache',
+            'Pragma':'no-cache'}); // http 1.1 & 1.0
+
     req.session.destroy();
     res.status(200).end();
 });
 
 webserver.get('/verification/:emailVerificationRef', async(req, res)=>{
+    res.set({'Cache-Control':'no-cache',
+            'Pragma':'no-cache'}); // http 1.1 & 1.0
 
     let connection;
     try{
@@ -298,7 +304,10 @@ webserver.post('/upload/:id', auth, busboy(), async (req, res)=>{
 webserver.get('/files', auth, async (req, res)=>{
     logLineAsync(logFilePath,`[${port}] `+"/files EP called");
 
-    res.headers = {'Content-Type': 'application/json'};
+    res.set({'Cache-Control':'no-cache',
+        'Pragma':'no-cache',
+        'Content-Type': 'application/json'});
+
     let filePath = path.join(__dirname, 'upload', req.session.user_email, 'files.txt');
     try{
         await fsp.access(filePath);
@@ -312,6 +321,9 @@ webserver.get('/files', auth, async (req, res)=>{
 
 webserver.get('/file/:name', auth, async (req, res)=>{
     logLineAsync(logFilePath,`[${port}] `+"/file/:name EP called");
+
+    res.set({'Cache-Control':'no-cache',
+        'Pragma':'no-cache'}); // http 1.1 & 1.0
 
     let fileName = decodeURIComponent(req.params['name']);
 

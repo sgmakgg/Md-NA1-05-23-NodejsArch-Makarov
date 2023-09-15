@@ -2,10 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="keywords" content="file storage"/>
+    <meta name="description" content="file storage">
 <!--    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css"-->
 <!--          integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf"-->
 <!--          crossorigin="anonymous">-->
-    <title>Upload</title>
+    <title>File storage</title>
     <style>
         @import url('https://fonts.googleapis.com/css?family=Montserrat:400,800');
         /*Progress bar*/
@@ -320,8 +322,8 @@
         </div>
     </div>
     <script>
-        let host = 'msnodearch.elmiservis.by';
-        // let host = 'localhost';
+        // let host = 'msnodearch.elmiservis.by';
+        let host = 'localhost';
         function uploadFile() {
             if(document.getElementById('file').files.length !== 0){
                 const url = `wss://${host}:56951`;
