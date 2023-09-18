@@ -75,11 +75,6 @@ webserver.use(function (req, res, next) {
     next();
 });
 
-webserver.use(
-    "/mysite",
-    express.static(path.resolve(__dirname,"static"))
-);
-
 webserver.use(session({
     key: 'user_session',
     secret: 'user_secret',
@@ -343,10 +338,6 @@ webserver.get('/file/:name', auth, async (req, res)=>{
 webserver.listen(port,()=>{
     logLineAsync(logFilePath,"web server running on port "+port);
 });
-
-//https server
-// let httpsServer = https.createServer(credentials, webserver);
-// httpsServer.listen(8443);
 
 //websocket
 let wss = https.createServer(credentials);
