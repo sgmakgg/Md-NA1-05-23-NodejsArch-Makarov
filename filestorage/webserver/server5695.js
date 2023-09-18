@@ -350,15 +350,17 @@ if(process.env.NODE_ENV !== 'production'){
     httpsServer.listen(8443);
 }
 
-
-//websocket
-// let wss = https.createServer(credentials);
+//websocket server
+let wss = https.createServer(credentials);
 
 const WebSocket = require('ws');
 const portWS = 56951;
-const WebSocketServer = new WebSocket.Server({port:portWS});
+const WebSocketServer = (process.env.NODE_ENV === 'production') ? new WebSocket.Server({port:portWS}) : new WebSocket.Server({server: wss});
 WebSocketServer.binaryType = 'blob';
-// wss.listen(portWS);
+
+if(process.env.NODE_ENV !== 'production') {
+    wss.listen(portWS);
+}
 
 WebSocketServer.on('connection', connection => {
     logLineAsync(logFilePath,`[${portWS}] `+"new connection established");
