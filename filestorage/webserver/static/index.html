@@ -323,7 +323,7 @@
 
         function uploadFile() {
             if(document.getElementById('file').files.length !== 0){
-                const url = `wss://localhost:56951`;
+                const url = `wss://${host}:56951`;
                 let connection = new WebSocket(url);
 
                 connection.onopen = () => {
