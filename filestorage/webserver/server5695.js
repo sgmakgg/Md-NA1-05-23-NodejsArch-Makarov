@@ -4,19 +4,19 @@ const path = require('path');
 const fs = require('fs');
 const fsp = fs.promises;
 
-
+//https
 let https = require('https');
-
 let privateKey  = fs.readFileSync('cert/key.pem');
 let certificate = fs.readFileSync('cert/cert.pem');
 let credentials = {key: privateKey, cert: certificate, passphrase:'qwerty'};
 
-
+//logging
 const {logLineAsync, escapeHTML} = require("./utils");
 const logFilePath = path.join(__dirname, '_server.log');
 
 //webserver
 const webserver = express();
+const port = 5695;
 webserver.use(express.urlencoded({extended:true}));
 const bodyParser = require('body-parser');
 const busboy = require('connect-busboy');
@@ -24,13 +24,10 @@ const busboy = require('connect-busboy');
 let clients=[];
 
 //db
-const port = 5695;
-
 const mysql=require("mysql");
 const {poolConfig} = require("./db/poolConfig");
 const {newConnectionFactory, selectQueryFactory, modifyQueryFactory} = require("./db/db_utils");
 let pool = mysql.createPool(poolConfig);
-
 
 //session
 let session = require('express-session');
@@ -347,9 +344,9 @@ webserver.listen(port,()=>{
     logLineAsync(logFilePath,"web server running on port "+port);
 });
 
-//https
-let httpsServer = https.createServer(credentials, webserver);
-httpsServer.listen(8443);
+//https server
+// let httpsServer = https.createServer(credentials, webserver);
+// httpsServer.listen(8443);
 
 //websocket
 let wss = https.createServer(credentials);
