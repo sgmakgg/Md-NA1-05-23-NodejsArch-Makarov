@@ -356,7 +356,6 @@
 
         async function uploadPostReq(wsReqId) {
             let formData = document.forms['uploadForm'];
-            console.log(formData);
             let reqData = new FormData(formData);
             let wsId = encodeURIComponent(wsReqId);
             let url = `https://${host}:8443/upload/` + `${wsId}`;
