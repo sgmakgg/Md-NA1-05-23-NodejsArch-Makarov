@@ -6,6 +6,9 @@ const fsp = fs.promises;
 
 //https
 let https = require('https');
+
+// selfsigned cert
+// openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 365
 let privateKey  = fs.readFileSync('cert/key.pem');
 let certificate = fs.readFileSync('cert/cert.pem');
 let credentials = {key: privateKey, cert: certificate, passphrase:'qwerty'};
@@ -354,7 +357,7 @@ if(process.env.NODE_ENV !== 'production'){
 let wss = https.createServer(credentials);
 
 const WebSocket = require('ws');
-const portWS = 56951;
+const portWS = (process.env.NODE_ENV === 'production')? 56951 : 6195;
 const WebSocketServer = (process.env.NODE_ENV === 'production') ? new WebSocket.Server({port:portWS}) : new WebSocket.Server({server: wss});
 WebSocketServer.binaryType = 'blob';
 
