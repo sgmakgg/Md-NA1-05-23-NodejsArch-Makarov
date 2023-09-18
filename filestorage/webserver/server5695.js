@@ -75,6 +75,11 @@ webserver.use(function (req, res, next) {
     next();
 });
 
+webserver.use(
+    "/mysite",
+    express.static(path.resolve(__dirname,"static"))
+);
+
 webserver.use(session({
     key: 'user_session',
     secret: 'user_secret',
@@ -339,13 +344,21 @@ webserver.listen(port,()=>{
     logLineAsync(logFilePath,"web server running on port "+port);
 });
 
+// https server
+if(process.env.NODE_ENV !== 'production'){
+    let httpsServer = https.createServer(credentials, webserver);
+    httpsServer.listen(8443);
+}
+
+
 //websocket
-let wss = https.createServer(credentials);
+// let wss = https.createServer(credentials);
+
 const WebSocket = require('ws');
 const portWS = 56951;
-const WebSocketServer = new WebSocket.Server({server: wss});
+const WebSocketServer = new WebSocket.Server({port:portWS});
 WebSocketServer.binaryType = 'blob';
-wss.listen(portWS);
+// wss.listen(portWS);
 
 WebSocketServer.on('connection', connection => {
     logLineAsync(logFilePath,`[${portWS}] `+"new connection established");
