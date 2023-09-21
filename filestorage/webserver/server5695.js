@@ -7,7 +7,7 @@ const fsp = fs.promises;
 //https
 let https = require('https');
 
-// selfsigned cert
+// selfsigned cert command
 // openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 365
 let privateKey  = fs.readFileSync('cert/key.pem');
 let certificate = fs.readFileSync('cert/cert.pem');
@@ -49,6 +49,12 @@ const {transporter} = require("./email/transportConfig");
 
 //host
 const host = process.env.NODE_ENV === 'production' ? 'msnodearch.elmiservis.by' : 'localhost';
+
+//storage
+const storagePath = path.join('../upload');
+if(!fs.existsSync(path.join(storagePath))){
+    fsp.mkdir(path.join(storagePath));
+}
 
 let auth = function (req, res, next){
     logLineAsync(logFilePath, "auth middleware , authentication status: " + req.session.user_auth);
@@ -241,11 +247,11 @@ webserver.post('/upload/:id', auth, busboy(), async (req, res)=>{
 
         logLineAsync(logFilePath,`Uploading of '${fileObj.fName}' started`);
 
-        if(!fs.existsSync(path.join(__dirname,"upload", req.session.user_email))){
-            await fsp.mkdir(path.join(__dirname,"upload", req.session.user_email));
+        if(!fs.existsSync(path.join(storagePath, req.session.user_email))){
+            await fsp.mkdir(path.join(storagePath, req.session.user_email));
         }
 
-        const writeStream = fs.createWriteStream(path.join(__dirname,"upload", req.session.user_email, `${fileObj.fName}`));
+        const writeStream = fs.createWriteStream(path.join(storagePath, req.session.user_email, `${fileObj.fName}`));
 
         file.pipe(writeStream);
 
@@ -271,7 +277,7 @@ webserver.post('/upload/:id', auth, busboy(), async (req, res)=>{
     req.busboy.on('finish', async () =>{
         clients.splice(socketIndex, 1);
         socket = null;
-        const filePath = path.join(__dirname, 'upload', req.session.user_email, 'files.txt');
+        const filePath = path.join(storagePath, req.session.user_email, 'files.txt');
         let record;
         let fileData
         try{
@@ -308,7 +314,7 @@ webserver.get('/files', auth, async (req, res)=>{
         'Pragma':'no-cache',
         'Content-Type': 'application/json'});
 
-    let filePath = path.join(__dirname, 'upload', req.session.user_email, 'files.txt');
+    let filePath = path.join(storagePath, req.session.user_email, 'files.txt');
     try{
         await fsp.access(filePath);
         let fileData = await fsp.readFile(filePath,'utf8');
@@ -329,7 +335,7 @@ webserver.get('/file/:name', auth, async (req, res)=>{
 
     fileName = escapeHTML(fileName);
 
-    let filePath = path.join(__dirname, 'upload', req.session.user_email, fileName);
+    let filePath = path.join(storagePath, req.session.user_email, fileName);
 
     try{
         await fsp.access(filePath);
