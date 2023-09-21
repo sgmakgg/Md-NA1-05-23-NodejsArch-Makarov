@@ -12,7 +12,7 @@
   error_log /home/chubby/git/Md-NA1-05-23-NodejsArch-Makarov/filestorage/fstor_err.log error;
 
   location = /index.html {
-   root /home/chubby/git/Md-NA1-05-23-NodejsArch-Makarov/filestorage/secondserver/static;
+   root /home/chubby/git/Md-NA1-05-23-NodejsArch-Makarov/filestorage/secondwebserver/static;
    try_files $uri /index.html  =404;
    expires 1h;
   }
