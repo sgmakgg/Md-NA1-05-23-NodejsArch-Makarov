@@ -18,7 +18,7 @@
   }
 
   location ~ / {
-   proxy_pass http://localhost:$HOST;
+   proxy_pass http://localhost:${HTTP_PORT};
    access_log /home/chubby/git/Md-NA1-05-23-NodejsArch-Makarov/filestorage/fstor_proxy.log proxy;
   }
 
@@ -26,15 +26,15 @@
 
 
 #websocket https://www.nginx.com/blog/websocket-nginx/
-    map $http_upgrade $connection_upgrade {
+    map ${DOLLAR}http_upgrade ${DOLLAR}connection_upgrade {
         default upgrade;
         '' close;
     }
- 
+
     upstream websocket {
-        server localhost:$WSHOST;
+        server localhost:${WS_PORT};
     }
- 
+
     server {
         listen 6196 ssl;
         ssl_certificate /etc/letsencrypt/live/msnodearch.elmiservis.by/fullchain.pem; # managed by Certbot
@@ -45,8 +45,8 @@
         location / {
             proxy_pass http://websocket;
             proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection $connection_upgrade;
-            proxy_set_header Host $host;
+            proxy_set_header Upgrade ${DOLLAR}http_upgrade;
+            proxy_set_header Connection ${DOLLAR}connection_upgrade;
+            proxy_set_header Host ${DOLLAR}host;
         }
     }  
