@@ -31,7 +31,7 @@
         '' close;
     }
 
-    upstream websocket {
+    upstream websocketsec {
         server localhost:${WS_PORT};
     }
 
@@ -43,7 +43,7 @@
         ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
 
         location / {
-            proxy_pass http://websocket;
+            proxy_pass http://websocketsec;
             proxy_http_version 1.1;
             proxy_set_header Upgrade ${DOLLAR}http_upgrade;
             proxy_set_header Connection ${DOLLAR}connection_upgrade;
