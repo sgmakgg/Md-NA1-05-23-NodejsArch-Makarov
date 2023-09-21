@@ -1,6 +1,6 @@
  server {
 
-  listen 8443 ssl;
+  listen 8444 ssl;
   ssl_certificate /etc/letsencrypt/live/msnodearch.elmiservis.by/fullchain.pem; # managed by Certbot
   ssl_certificate_key /etc/letsencrypt/live/msnodearch.elmiservis.by/privkey.pem; # managed by Certbot
   include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
@@ -36,7 +36,7 @@
     }
  
     server {
-        listen 6195 ssl;
+        listen 6196 ssl;
         ssl_certificate /etc/letsencrypt/live/msnodearch.elmiservis.by/fullchain.pem; # managed by Certbot
         ssl_certificate_key /etc/letsencrypt/live/msnodearch.elmiservis.by/privkey.pem; # managed by Certbot
         include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
