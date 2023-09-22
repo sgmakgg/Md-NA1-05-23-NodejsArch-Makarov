@@ -1,3 +1,5 @@
+ proxy_cache_path /home/chubby/git/Md-NA1-05-23-NodejsArch-Makarov/filestorage/nginx_caches/server7690 keys_zone=WEBSERVERFS:64m levels=1:2 inactive=1y max_size=1g;
+
  server {
 
   listen 8443 ssl;
@@ -19,6 +21,22 @@
 
   location ~ / {
    proxy_pass http://localhost:${HTTP_PORT};
+
+   if ( $request_method = OPTIONS ) {
+           add_header Content-Length 0;
+           add_header Access-Control-Allow-Origin *;
+           add_header Access-Control-Allow-Headers Authorization,Content-Type,Accept;
+           add_header Allow GET,HEAD,POST;
+           add_header Content-Language en-RU;
+           return 200;
+       }
+
+   proxy_cache_lock on;
+   proxy_cache WEBSERVERFS;
+   proxy_cache_valid 1s;
+   proxy_cache_use_stale error timeout invalid_header updating http_500 http_502 http_503 http_504;proxy_cache_use_stale error timeout invalid_header updating http_500 http_502 http_503 http_504;
+   add_header X-Cached $upstream_cache_status;
+
    access_log /home/chubby/git/Md-NA1-05-23-NodejsArch-Makarov/filestorage/fstor_proxy.log proxy;
   }
 
