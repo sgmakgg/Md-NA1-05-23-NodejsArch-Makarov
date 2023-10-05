@@ -354,7 +354,7 @@ webserver.get('/file/:name', auth, async (req, res)=>{
     }
 });
 
-webserver.get(/^\/preview\/(([a-zA-Z\d]+)\.(jpg|jpeg|gif|png))$/, auth, async (req, res) => {
+webserver.get(/^\/preview\/(([a-zA-Z\d\w]+)\.(jpg|jpeg|gif|png))$/, auth, async (req, res) => {
 
     const fullFileName=querystring.unescape(req.params[0]);
     const fileNameOnly=querystring.unescape(req.params[1]);
