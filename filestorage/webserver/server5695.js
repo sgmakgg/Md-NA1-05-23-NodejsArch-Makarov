@@ -1,6 +1,8 @@
 const express = require('express');
 const path = require('path');
 
+const querystring = require('querystring');
+
 const fs = require('fs');
 const fsp = fs.promises;
 
@@ -13,8 +15,8 @@ let privateKey  = fs.readFileSync('cert/key.pem');
 let certificate = fs.readFileSync('cert/cert.pem');
 let credentials = {key: privateKey, cert: certificate, passphrase:'qwerty'};
 
-//logging
-const {logLineAsync, escapeHTML} = require("./utils");
+//utils
+const {logLineAsync, escapeHTML, compressImage} = require("./utils");
 const logFilePath = path.join(__dirname, '_server.log');
 
 //webserver
@@ -84,10 +86,13 @@ webserver.use(function (req, res, next) {
     next();
 });
 
-webserver.use(
-    "/mysite",
-    express.static(path.resolve(__dirname,"static"))
-);
+if(process.env.NODE_ENV !== 'production'){
+    webserver.use(
+        "/mysite",
+        express.static(path.resolve(__dirname,"static"))
+    );
+}
+
 
 webserver.use(session({
     key: 'user_session',
@@ -347,6 +352,44 @@ webserver.get('/file/:name', auth, async (req, res)=>{
     catch{
         res.status(400).end();
     }
+});
+
+webserver.get(/^\/preview\/(([a-zA-Z\d]+)\.(jpg|jpeg|gif|png))$/, auth, async (req, res) => {
+
+    const fullFileName=querystring.unescape(req.params[0]);
+    const fileNameOnly=querystring.unescape(req.params[1]);
+    const fileExtName=querystring.unescape(req.params[2]);
+
+    logLineAsync(logFilePath,`[${port}] request on preview for ${fullFileName}`);
+
+    if(!fs.existsSync(path.join(storagePath, req.session.user_email, "previews"))){
+        await fsp.mkdir(path.join(storagePath, req.session.user_email, "previews"));
+    }
+    const thumbPFN=path.resolve(storagePath, req.session.user_email,"previews", fullFileName);
+
+    try {
+        const stats=await fsp.stat(thumbPFN);
+        if ( stats.isFile() ) {
+            logLineAsync(logFilePath,`[${port}] server has a small image ${fullFileName}`);
+            res.sendFile( thumbPFN );
+        }
+        else {
+            res.status(403).end();
+        }
+    }
+    catch ( err ) {
+        logLineAsync(logFilePath,`[${port}] server has no preview, will compress ${fullFileName}`);
+
+        const originPFN=path.resolve(storagePath, req.session.user_email,`${fileNameOnly}.${fileExtName}`);
+        let compressStartDT=new Date();
+        await compressImage(originPFN,thumbPFN,30);
+        let compressDurationMS=(new Date())-compressStartDT;
+
+        logLineAsync(logFilePath,`[${port}] preview saved  ${fullFileName}, compression period ${compressDurationMS} ms`);
+
+        res.sendFile( thumbPFN );
+    }
+
 });
 
 webserver.listen(port,()=>{
